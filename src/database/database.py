@@ -47,7 +47,7 @@ class Database:
         self.secrets_repo: SecretsRepository = SecretsRepository(session_maker=session_maker)
 
     @classmethod
-    async def create(cls, database_url: str) -> object:
+    async def create(cls, database_url: str) -> "Database":
         """
         Метод создает проинициализированный экземпляр базы данных.
         Предварительно создавая таблицы в базе данных.

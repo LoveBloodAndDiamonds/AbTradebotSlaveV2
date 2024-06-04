@@ -25,4 +25,4 @@ if not os.path.exists(LOGS_FOLDER_PATH):
     os.makedirs(LOGS_FOLDER_PATH)
 
 # URL базы данных для sqlalchemy
-DATABASE_URL: str = f'aiosqlite:///{FOLDER_PATH}/secrets.db'
+DATABASE_URL: str = f'sqlite+aiosqlite:///{FOLDER_PATH}/secrets.db'

@@ -39,5 +39,5 @@ class SecretsRepository:
         :return:
         """
         async with self.session_maker() as session:
-            session.merge(obj)
+            await session.merge(obj)
             await session.commit()
