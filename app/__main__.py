@@ -92,9 +92,9 @@ async def _gui_case(db: Database, secrets: SecretsORM) -> None:
     header.pack()
     tk.Label().pack()
 
-    tk.Label(w, text="Токен телеграм бота", font=("Arial", 17, "bold")).pack()
+    tk.Label(w, text="Токен телеграм бота", font=("Arial", 15, "bold")).pack()
     link_1 = tk.Label(
-        w, text="Токен бота можно получить тут (Ссылка)\n", font=("Arial", 14, "underline"), cursor="hand2")
+        w, text="Токен бота можно получить тут (Ссылка)\n", font=("Arial", 12, "underline"), cursor="hand2")
     link_1.bind("<Button-1>", func=lambda e: webbrowser.open_new("https://t.me/BotFather"))
     link_1.pack()
     bot_token_entry = tk.Entry(w)
@@ -102,9 +102,9 @@ async def _gui_case(db: Database, secrets: SecretsORM) -> None:
     bot_token_entry.pack()
     tk.Label().pack()
 
-    tk.Label(w, text="Телеграм айди", font=("Arial", 17, "bold")).pack()
+    tk.Label(w, text="Телеграм айди", font=("Arial", 15, "bold")).pack()
     link_2 = tk.Label(
-        w, text="Телеграм айди можно получить тут (Ссылка)\n", font=("Arial", 14, "underline"), cursor="hand2")
+        w, text="Телеграм айди можно получить тут (Ссылка)\n", font=("Arial", 12, "underline"), cursor="hand2")
     link_2.bind("<Button-1>", func=lambda e: webbrowser.open_new("https://t.me/getmyid_bot"))
     link_2.pack()
     telegram_id_entry = tk.Entry(w)
@@ -112,9 +112,9 @@ async def _gui_case(db: Database, secrets: SecretsORM) -> None:
     telegram_id_entry.pack()
     tk.Label().pack()
 
-    tk.Label(w, text="Ключ лицензии", font=("Arial", 17, "bold")).pack()
+    tk.Label(w, text="Ключ лицензии", font=("Arial", 15, "bold")).pack()
     link_3 = tk.Label(
-        w, text="Приобрести ключ лицензии можно тут (Ссылка)\n", font=("Arial", 14, "underline"), cursor="hand2")
+        w, text="Приобрести ключ лицензии можно тут (Ссылка)\n", font=("Arial", 12, "underline"), cursor="hand2")
     link_3.bind("<Button-1>", func=lambda e: webbrowser.open_new("https://t.me/getmyid_bot"))
     link_3.pack()
     license_key_entry = tk.Entry(w)
