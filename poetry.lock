@@ -774,6 +774,21 @@ typing = ["typing-extensions"]
 xmp = ["defusedxml"]
 
 [[package]]
+name = "pybit"
+version = "5.7.0"
+description = "Python3 Bybit HTTP/WebSocket API Connector"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "pybit-5.7.0.tar.gz", hash = "sha256:2b5a4fef80d4a0815ae3d339c0eb4c39969df01f9727b65e231196accdde22fe"},
+]
+
+[package.dependencies]
+requests = "*"
+websocket-client = "*"
+websockets = "*"
+
+[[package]]
 name = "pycryptodome"
 version = "3.20.0"
 description = "Cryptographic library for Python"
@@ -1395,6 +1410,22 @@ socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
 zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
+name = "websocket-client"
+version = "1.8.0"
+description = "WebSocket client for Python with low level API options"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "websocket_client-1.8.0-py3-none-any.whl", hash = "sha256:17b44cc997f5c498e809b22cdf2d9c7a9e71c02c8cc2b6c56e7c2d1239bfa526"},
+    {file = "websocket_client-1.8.0.tar.gz", hash = "sha256:3239df9f44da632f96012472805d40a23281a991027ce11d2f45a6f24ac4c3da"},
+]
+
+[package.extras]
+docs = ["Sphinx (>=6.0)", "myst-parser (>=2.0.0)", "sphinx-rtd-theme (>=1.1.0)"]
+optional = ["python-socks", "wsaccel"]
+test = ["websockets"]
+
+[[package]]
 name = "websockets"
 version = "12.0"
 description = "An implementation of the WebSocket Protocol (RFC 6455 & 7692)"
@@ -1595,4 +1626,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.13"
-content-hash = "57a00e52fe7a39b9c52a7320aacbe65c6e537c47f0ccd0ae9d1ff3e543f1ba5d"
+content-hash = "e021a3e6af13d9195861d22f1b18cc849f6f2e0c90ea760274a806ec81f07e4f"

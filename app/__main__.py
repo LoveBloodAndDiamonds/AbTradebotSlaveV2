@@ -1,14 +1,15 @@
 """
-Этот файл отвечает за логику запуска
+Этот файл отвечает за логику запуска приложения.
 """
+
 import asyncio
 import platform
 
 import requests
 
-from config import DATABASE_URL, APPLICATION_FOLDER, VERSION
-from database import Database, SecretsORM
-from bot import start_bot
+from app.bot import start_bot
+from app.config import DATABASE_URL, APPLICATION_FOLDER, VERSION, log_errors
+from app.database import Database, SecretsORM
 
 
 class _Validator:
@@ -80,8 +81,8 @@ async def _gui_case(db: Database, secrets: SecretsORM) -> None:
         except Exception as e:
             header.config(text=f"Ошибка: {e}", foreground="red")
         else:
+            # w.quit()
             w.destroy()
-            await start_bot()
 
     w: tk.Tk = tk.Tk()
     w.title(APPLICATION_FOLDER + " v" + VERSION)
@@ -138,8 +139,6 @@ async def _cli_case(db: Database, secrets: SecretsORM) -> None:
     """
     import json
 
-    print(f"Добро пожаловать в {APPLICATION_FOLDER} v{VERSION}!")
-
     with open(".linux/secrets.json", "r") as f:
         secrets_json: dict = json.load(f)
 
@@ -153,6 +152,7 @@ async def _cli_case(db: Database, secrets: SecretsORM) -> None:
     await db.secrets_repo.update(secrets)
 
 
+@log_errors
 async def main() -> None:
     """
     Входная точка программы, определяет каким методом нужно принять инпуты от
@@ -172,11 +172,10 @@ async def main() -> None:
     match system:
         case "Darwin" | "Windows":
             await _gui_case(db, secrets)
-        case "Linux":
-            await _cli_case(db, secrets)
         case _:
             await _cli_case(db, secrets)
 
+    await start_bot()
 
 if __name__ == '__main__':
     asyncio.run(main())

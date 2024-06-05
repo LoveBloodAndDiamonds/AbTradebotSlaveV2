@@ -42,6 +42,7 @@ def get_session_maker(engine: AsyncEngine = None) -> sessionmaker:
 
 class Database:
     """Database class."""
+    _instance: "Database" = None
 
     def __init__(self, session_maker: sessionmaker) -> None:
         self.secrets_repo: SecretsRepository = SecretsRepository(session_maker=session_maker)
@@ -54,8 +55,13 @@ class Database:
         :param database_url: URL адрес базы данных.
         :return: Объект базы данных.
         """
+        if cls._instance:
+            return cls._instance
+
         db_engine: AsyncEngine = create_async_engine(url=database_url)
         await proceed_schemas(db_engine)
         session_maker: sessionmaker = get_session_maker(db_engine)
 
-        return cls(session_maker)
+        cls._instance = cls(session_maker)
+
+        return cls._instance
