@@ -1,19 +1,18 @@
+__all__ = ["exchange_info", ]
+
 import re
 import time
-from threading import Thread
 
 import requests
 
 from app.config import logger
+from ..abstract import ABCExchangeInfo
 
 
-class SymbolsDecimals(Thread):
+class ExchangeInfo(ABCExchangeInfo):
     """Thread what update symbols decimals"""
     _instance = None
     symbols_data = dict()
-
-    def __init__(self):
-        super().__init__(daemon=True)
 
     def run(self):
         """Update symbols decimals.
@@ -99,17 +98,17 @@ class SymbolsDecimals(Thread):
         return round(price, cls.symbols_data[symbol.upper()][0])
 
     @classmethod
-    def round_quantity(cls, symbol: str, qty: float) -> float:
+    def round_quantity(cls, symbol: str, quantity: float) -> float:
         """
         Rounds qty for ticker
         :param symbol: ticker from binance.com, like "BTCUSDT" or "xrpusdt"
-        :param qty: any float
+        :param quantity: any float
         :return: rounded qty for ticker
         """
         assert symbol in cls.symbols_data, "Symbol not in symbols_data in SymbolsDecimals object"
 
-        return abs(round(qty, cls.symbols_data[symbol.upper()][1]))
+        return abs(round(quantity, cls.symbols_data[symbol.upper()][1]))
 
 
-symbols_decimals = SymbolsDecimals()
-symbols_decimals.start()
+exchange_info = ExchangeInfo()
+exchange_info.start()

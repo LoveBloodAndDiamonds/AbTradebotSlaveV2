@@ -23,7 +23,7 @@ class AlertWorker:
         cls.ADMIN_ID = secrets.admin_telegram_id
 
     @classmethod
-    async def send_alert(cls, message: str) -> None:
+    async def send(cls, message: str) -> None:
         """
         Функция отправляет сообщение пользователю.
         :param message: Текст, который нужно отправить.
@@ -33,3 +33,15 @@ class AlertWorker:
             chat_id=cls.ADMIN_ID,
             text=message
         )
+
+    @classmethod
+    async def success(cls, message: str) -> None:
+        return await cls.send(f"✅ {message}")
+
+    @classmethod
+    async def error(cls, message: str) -> None:
+        return await cls.send(f"‼️ {message}")
+
+    @classmethod
+    async def warning(cls, message: str) -> None:
+        return await cls.send(f"⚠️ {message}")

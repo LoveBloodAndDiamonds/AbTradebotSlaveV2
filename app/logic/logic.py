@@ -7,8 +7,8 @@ import websockets
 
 from app.config import logger, VERSION, WS_RECONNECT_TIMEOUT, WS_WORKERS_COUNT
 from app.database import Database, SecretsORM
-from .exchanges import EXCHANGES
-from .schemas import UserStrategySettings, Signal
+from .connectors import EXCHANGES_CLASSES_FROM_ENUM
+from .schemas import UserStrategySettings, Signal, Exchange
 from .utils import AlertWorker
 
 
@@ -41,26 +41,67 @@ class Logic:
         Запуск логики соединения с мастер-вебсокетом.
         :return:
         """
-        # await self._queue.put(
-        #     {
-        #         "strategy": "test",
-        #         "ticker": "XRPUSDT",
-        #         "exchange": "BINANCE",
-        #         "take_profit": 0.54,
-        #         "stop_loss": 0.52,
-        #         "breakeven": 0.54
-        #     }
-        # )
-        # self._active_strategies["test"] = UserStrategySettings(
-        #     risk_usdt=1,
-        #     trades_count=None
-        # )
-
         # Создаем задачи для рабочих
         workers = [asyncio.create_task(self._worker()) for _ in range(WS_WORKERS_COUNT)]
 
         # Запускаем асихнронный сбор и обработку информации
         await asyncio.gather(self._connect_to_master(), *workers)
+
+    async def get_license_key_expired_date(self) -> datetime:
+        """
+        Функция получает время истечения подписки в формате timestamp и возвращает
+        его в формате datetime.
+        :return:
+        """
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"http://{self._host}:{self._port}/license_key/{self._license_key}") as responce:
+                result: dict = await responce.json()
+                if result["error"]:
+                    raise Exception(result["error"])
+                return datetime.fromtimestamp(result["result"])
+
+    async def add_user_strategy(self, strategy_name: str, risk_usdt: float, trades_count: int | None) -> None:
+        """
+        Функция добавляет стратегию в словарь активных стратегий.
+        :param strategy_name: Название стратегии
+        :param risk_usdt: Риск в долларах
+        :param trades_count: Количество сделок, если None - то бесконечность.
+        :return: None
+        """
+        # Проверка на то, запущена ли уже стратегния.
+        if strategy_name.lower() in self._active_strategies:
+            raise ValueError(f"Стратегия {strategy_name} уже запущена.")
+
+        # Првоерка - существует ли такая стратегия на сервере.
+        server_strategis: list[str] = await self._get_server_available_strategies()
+        if strategy_name.lower() not in server_strategis:
+            raise ValueError(f"Стратегии {strategy_name} нет в списке стратегий")
+
+        # Добавление обьекта стратегии в словарь активных стратегий
+        self._active_strategies[strategy_name.lower()] = UserStrategySettings(
+            risk_usdt=risk_usdt,
+            trades_count=trades_count)
+
+    def remove_user_startegy(self, strategy_name: str = "", stop_all: bool = False) -> None:
+        """
+        Функция удаляет активную стратегию пользователя.
+        :param strategy_name: Название стратегии
+        :param stop_all: Остановить все?
+        :return:
+        """
+        if stop_all:  # Остановка всех стратегий
+            self._active_strategies: dict[str, UserStrategySettings] = {}
+        else:  # Остановка одной стратегии
+            if strategy_name.lower() not in self._active_strategies:  # Проверка на существование стратегии
+                raise ValueError(f"Стратегия {strategy_name} не существует или не запущена.")
+            del self._active_strategies[strategy_name.lower()]
+
+    def get_active_user_strategies(self) -> dict[str, UserStrategySettings]:
+        """
+        Функция возвращает словарь с активными стратегиями пользователя.
+        :return:
+        """
+        return self._active_strategies
 
     def _parse_license_key(self) -> list[str]:
         """
@@ -115,33 +156,40 @@ class Logic:
         Таких рабочих может быть несколько, чтобы успевать обрабатывать сразу несколько сигналов.
         :return:
         """
-        # todo
         while True:
             try:
+                # Обрабатываем и валидируем сигнал
                 msg: dict = await self._queue.get()
                 signal: Signal = Signal.from_dict(signal_dict=msg)
-                if signal.strategy in self._active_strategies:
-                    user_strategy: UserStrategySettings = self._active_strategies[signal.strategy]
-                    logger.info(f"Got {signal} from ws")
-                    await AlertWorker.send_alert(f"Получен сигнал по стратегии {signal.strategy}")
-                    secrets: SecretsORM = await self._db.secrets_repo.get()
-                    exchange = EXCHANGES[signal.exchange](
-                        secrets=secrets,
-                        signal=signal,
-                        user_strategy=user_strategy
-                    )
-                    await exchange.process_signal()
-
-                    if user_strategy.trades_count is not None:
-                        self._active_strategies[signal.strategy].trades_count -= 1
-                        if self._active_strategies[signal.strategy].trades_count == 0:
-                            await AlertWorker.send_alert(f"Стратегия {signal.strategy} "
-                                                         f"выполнила указанное количество сделок.")
-                            del self._active_strategies[signal.strategy]
-                            return
-
+                if signal.strategy not in self._active_strategies:
+                    logger.debug(f"Ignore signal: {signal}")
+                    continue
                 else:
-                    logger.debug(f"Ignore {signal} from ws")
+                    logger.info(f"Process signal: {signal}")
+
+                await AlertWorker.warning(f"Запуск стратегии {signal.strategy}")
+
+                # Запускаем стратегию
+                api_key, api_secret = await self._get_keys_to_exchange(exchange=signal.exchange)
+                exchange = EXCHANGES_CLASSES_FROM_ENUM[signal.exchange](
+                    api_key=api_key,
+                    api_secret=api_secret,
+                    signal=signal,
+                    user_strategy=self._active_strategies[signal.strategy])
+                is_success: bool = await exchange.process_signal()
+
+                # Проверяем количество оставшихся сигналов, если сигнал успешно обработан
+                if not is_success or self._active_strategies[signal.strategy] is None:
+                    continue
+
+                # Убалвяем количество оставшихся сделок и информируем юзера
+                self._active_strategies[signal.strategy].trades_count -= 1
+                await AlertWorker.send(
+                    f"Осталось {self._active_strategies[signal.strategy].trades_count} сделок по {signal.strategy}.")
+
+                # Удаляем стратегию из активных, если в ней не осталось сделок
+                if self._active_strategies[signal.strategy].trades_count <= 0:
+                    del self._active_strategies[signal.strategy]
 
             except json.decoder.JSONDecodeError:
                 logger.error(f"WS Error while decode msg: {msg}")
@@ -149,56 +197,6 @@ class Logic:
                 logger.exception(f"WS Error in _worker func: {msg} : {e}")
             finally:
                 self._queue.task_done()
-
-    async def get_license_key_expired_date(self) -> datetime:
-        """
-        Функция получает время истечения подписки в формате timestamp и возвращает
-        его в формате datetime.
-        :return:
-        """
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"http://{self._host}:{self._port}/license_key/{self._license_key}") as responce:
-                result: dict = await responce.json()
-                if result["error"]:
-                    raise Exception(result["error"])
-                return datetime.fromtimestamp(result["result"])
-
-    async def add_user_strategy(self, strategy_name: str, risk_usdt: float, trades_count: int | None) -> None:
-        """
-        Функция добавляет стратегию в словарь активных стратегий.
-        :param strategy_name: Название стратегии
-        :param risk_usdt: Риск в долларах
-        :param trades_count: Количество сделок, если None - то бесконечность.
-        :return: None
-        """
-        # Проверка на то, запущена ли уже стратегния.
-        if strategy_name.lower() in self._active_strategies:
-            raise ValueError(f"Стратегия {strategy_name} уже запущена.")
-
-        # Првоерка - существует ли такая стратегия на сервере.
-        server_strategis: list[str] = await self._get_server_available_strategies()
-        if strategy_name.lower() not in server_strategis:
-            raise ValueError(f"Стратегии {strategy_name} нет в списке стратегий.\n"
-                             f"Доступные стратегии: {server_strategis}")
-
-        # Добавление обьекта стратегии в словарь активных стратегий
-        self._active_strategies[strategy_name.lower()] = UserStrategySettings(
-            risk_usdt=risk_usdt,
-            trades_count=trades_count)
-
-    def remove_user_startegy(self, strategy_name: str = "", stop_all: bool = False) -> None:
-        """
-        Функция удаляет активную стратегию пользователя.
-        :param strategy_name: Название стратегии
-        :param stop_all: Остановить все?
-        :return:
-        """
-        if stop_all:  # Остановка всех стратегий
-            self._active_strategies: dict[str, UserStrategySettings] = {}
-        else:  # Остановка одной стратегии
-            if strategy_name.lower() not in self._active_strategies:  # Проверка на существование стратегии
-                raise ValueError(f"Стратегия {strategy_name} не существует или не запущена.")
-            del self._active_strategies[strategy_name.lower()]
 
     async def _get_server_available_strategies(self) -> list[str]:
         """
@@ -212,9 +210,15 @@ class Logic:
                     raise Exception(result["error"])
                 return result["result"]
 
-    def get_active_user_strategies(self) -> dict[str, UserStrategySettings]:
+    async def _get_keys_to_exchange(self, exchange: Exchange) -> tuple[str, str]:
         """
-        Функция возвращает словарь с активными стратегиями пользователя.
+        Функция возвращает ключи в соответствии с биржей сигнала
         :return:
         """
-        return self._active_strategies
+        await self._update_secrets()
+        if exchange == Exchange.BINANCE:
+            return self._secrets.binance_api_key, self._secrets.binance_api_secret
+        elif exchange == Exchange.BYBIT:
+            return self._secrets.bybit_api_key, self._secrets.bybit_api_secret
+        else:
+            raise ValueError("Wrong signal exchange")

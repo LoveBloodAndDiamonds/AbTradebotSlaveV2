@@ -4,7 +4,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from app.config import DATABASE_URL, logger
+from app.config import DATABASE_URL, logger, VERSION
 from app.database import Database, SecretsORM
 from app.logic import Logic
 from .handlers import register_commands, set_up_commands
@@ -24,6 +24,12 @@ async def start_bot() -> None:
 
     # Создаем диспатчер
     dp = Dispatcher(storage=MemoryStorage())
+
+    # Необязательная кастомизация имени бота
+    try:
+        await bot.set_my_name(f"Abcde Robot v{VERSION}")
+    except:  # noqa
+        pass
 
     # Регистрируем команды
     register_commands(dp)

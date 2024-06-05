@@ -7,4 +7,4 @@
 WS_RECONNECT_TIMEOUT: float = 10
 
 # Количество рабочих, обрабатывающих сообщение с вебсокета
-WS_WORKERS_COUNT: int = 2
+WS_WORKERS_COUNT: int = 3

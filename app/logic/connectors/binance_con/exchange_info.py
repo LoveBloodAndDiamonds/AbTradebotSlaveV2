@@ -5,26 +5,18 @@ __all__ = ["exchange_info", ]
 
 import re
 import time
-from threading import Thread
 
 from binance import Client
 
 from app.config import logger
+from ..abstract import ABCExchangeInfo
 
 
-class ExchangeInfo(Thread):
-    """
-    Класс, который внутри себя обновляет информацию о том, как надо округлять
-    цены монет и их количество в ордерах с binance.com.
-    """
-
+class ExchangeInfo(ABCExchangeInfo):
     binance = Client()
     precisions: dict[str: list[int, int]] = {}
 
-    def __init__(self):
-        super().__init__(daemon=True)
-
-    def run(self):
+    def run(self) -> None:
         while True:
             try:
                 exchange_info_dict: dict = self.binance.futures_exchange_info()
@@ -80,14 +72,6 @@ class ExchangeInfo(Thread):
         except KeyError as e:
             logger.error(f"KeyError while rounding quantity {symbol}: {e}")
             return quantity
-
-    @classmethod
-    def available_tickers(cls) -> list[str]:
-        """
-        Return list of available tickers in futures binance.com
-        :return:
-        """
-        return list(cls.precisions.keys())
 
 
 exchange_info = ExchangeInfo()
