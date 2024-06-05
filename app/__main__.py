@@ -4,6 +4,7 @@
 
 import asyncio
 import platform
+import time
 
 import requests
 
@@ -91,54 +92,54 @@ async def _cli_case(db: Database, secrets: SecretsORM) -> None:
     # Ввод токена телеграм бота
     while True:
         if not secrets.bot_token:
-            bot_input_text: str = "\nВведите токен бота.\n-> "
+            bot_input_text: str = "Введите токен бота.\n-> "
         else:
-            bot_input_text: str = (f"\nВведите токен бота.\nВведите пустую строку, чтобы использовать "
+            bot_input_text: str = (f"Введите токен бота.\nВведите пустую строку, чтобы использовать "
                                    f"'{secrets.bot_token}'\n -> ")
         bot_token_input: str = input(bot_input_text)
         bot_token = secrets.bot_token if not bot_token_input.strip() else bot_token_input.strip()
 
         try:
             _Validator.validate_bot_token(bot_token=bot_token)
-            logger.success("Токен телеграм бота успешно прошел проверку.")
+            logger.success("Токен телеграм бота успешно прошел проверку.\n")
             break
         except Exception as e:
-            logger.error(f"Ошибка при проверке токена бота: {e}")
+            logger.error(f"Ошибка при проверке токена бота: {e}\n")
+    time.sleep(.05)  # Задержка, чтобы лог успел встать на нужное место
 
     # Ввод телеграм айди пользователя
     if not secrets.admin_telegram_id:
-        telegram_id_input_text: str = "\nВведите Ваш телеграм айди.\n-> "
+        telegram_id_input_text: str = "Введите Ваш телеграм айди.\n-> "
     else:
-        telegram_id_input_text: str = (f"\nВведите Ваш телеграм айди\nВведите пустую строку, чтобы использовать "
+        telegram_id_input_text: str = (f"Введите Ваш телеграм айди\nВведите пустую строку, чтобы использовать "
                                        f"'{secrets.admin_telegram_id}'\n -> ")
     telegram_id_input: str = input(telegram_id_input_text)
     telegram_id = secrets.admin_telegram_id if not telegram_id_input.strip() else telegram_id_input.strip()
-    logger.info("Если бот не будет отвечать на Ваши команды - проверьте телеграм айди.")
+    logger.info("Если бот не будет отвечать на Ваши команды - проверьте телеграм айди.\n")
+    time.sleep(.05)  # Задержка, чтобы лог успел встать на нужное место
 
     # Ввод ключа лицензии
     while True:
         if not secrets.license_key:
-            license_key_input_text: str = "\nВведите ключ лицензии.\n-> "
+            license_key_input_text: str = "Введите ключ лицензии.\n-> "
         else:
-            license_key_input_text: str = (f"\nВведите ключ лицензии\nВведите пустую строку, чтобы использовать "
+            license_key_input_text: str = (f"Введите ключ лицензии\nВведите пустую строку, чтобы использовать "
                                            f"'{secrets.license_key}'\n -> ")
         license_key_input: str = input(license_key_input_text)
         license_key = secrets.license_key if not license_key_input.strip() else license_key_input.strip()
 
         try:
             _Validator.valite_license_key(license_key=license_key)
-            logger.success("Ключ лицензии успешно прошел проверку.")
+            logger.success("Ключ лицензии успешно прошел проверку.\n")
             break
         except Exception as e:
-            logger.error(f"Ошибка при проверке ключа лицензии: {e}")
+            logger.error(f"Ошибка при проверке ключа лицензии: {e}\n")
 
     # Обновление данных в базе данных.
     secrets.bot_token = bot_token
     secrets.admin_telegram_id = telegram_id
     secrets.license_key = license_key
     await db.secrets_repo.update(secrets)
-
-    logger.info(f"Происходит запсуск робота!\n\n")
 
 
 async def _from_json_case(db: Database, secrets: SecretsORM) -> None:

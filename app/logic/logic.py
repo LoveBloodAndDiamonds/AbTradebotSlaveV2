@@ -4,9 +4,8 @@ from datetime import datetime
 
 import aiohttp
 import websockets
-from aiogram import Bot
 
-from app.config import logger, VERSION
+from app.config import logger, VERSION, WS_RECONNECT_TIMEOUT, WS_WORKERS_COUNT
 from app.database import Database, SecretsORM
 from .exchanges import EXCHANGES
 from .schemas import UserStrategySettings, Signal
@@ -34,12 +33,6 @@ class Logic:
         # Словарь с активными стратегиями юзера
         self._active_strategies: dict[str, UserStrategySettings] = {}
 
-        # Интервал для реконнекта к мастер вебсокету в секундах
-        self.__ws_reconnect_timeout: float = 60
-
-        # Количество рабочих, которые отвечают за обработку сообщений с вебсокета
-        self.__workers_count: int = 2
-
         # Инициализируем класс, который отвечает за отправление алертов пользователю
         AlertWorker.init(secrets=self._secrets)
 
@@ -64,7 +57,7 @@ class Logic:
         # )
 
         # Создаем задачи для рабочих
-        workers = [asyncio.create_task(self._worker()) for _ in range(self.__workers_count)]
+        workers = [asyncio.create_task(self._worker()) for _ in range(WS_WORKERS_COUNT)]
 
         # Запускаем асихнронный сбор и обработку информации
         await asyncio.gather(self._connect_to_master(), *workers)
@@ -95,7 +88,7 @@ class Logic:
                 url: str = f"ws://{self._host}:{self._port}/ws/{VERSION}/{self._license_key}"
                 async with (websockets.connect(url) as ws):  # ws: WebSocketClientProtocol
                     try:
-                        logger.info(f"WS connected to: {url}")
+                        logger.success(f"WS connected to: {url}")
                         while True:
                             msg_str: str = await ws.recv()
                             msg_dict: dict = json.loads(msg_str)
@@ -105,8 +98,8 @@ class Logic:
                             logger.error(f"WS Connection error in recv ws msg: {e}")
                         else:
                             logger.exception(f"WS Unknown error in recv ws msg: {e}")
-                        logger.info(f"Reconnect in {self.__ws_reconnect_timeout} seconds")
-                        await asyncio.sleep(self.__ws_reconnect_timeout)
+                        logger.info(f"Reconnect to WS in {WS_RECONNECT_TIMEOUT} seconds")
+                        await asyncio.sleep(WS_RECONNECT_TIMEOUT)
                         await ws.close()
                         continue
             except Exception as e:
