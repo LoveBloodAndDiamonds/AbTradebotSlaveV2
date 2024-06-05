@@ -14,7 +14,7 @@ class Signal:
 
     def as_dict(self) -> dict:
         return {
-            "strategy": self.strategy,
+            "strategy": self.strategy.lower(),
             "ticker": self.ticker,
             "exchange": self.exchange.value,
             "take_profit": self.take_profit,
@@ -25,7 +25,7 @@ class Signal:
     @classmethod
     def from_dict(cls, signal_dict: dict) -> "Signal":
         return cls(
-            strategy=signal_dict["strategy"],
+            strategy=signal_dict["strategy"].lower(),
             ticker=signal_dict["ticker"],
             exchange=Exchange[signal_dict["exchange"]],
             take_profit=signal_dict["take_profit"],

@@ -8,7 +8,7 @@ import platform
 import requests
 
 from app.bot import start_bot
-from app.config import DATABASE_URL, APPLICATION_FOLDER, VERSION, log_errors
+from app.config import DATABASE_URL, APPLICATION_FOLDER, VERSION, log_errors, logger
 from app.database import Database, SecretsORM
 
 
@@ -53,85 +53,85 @@ class _Validator:
             raise Exception(f"Ошибка при валидации ключа лицензии: {e}")
 
 
-async def _gui_case(db: Database, secrets: SecretsORM) -> None:
+async def _cli_case(db: Database, secrets: SecretsORM) -> None:
     """
     Кейс, при котором надо отобразить графический интерфейс.
     Подходит для Windows и MacOS.
     :return:
     """
-    import tkinter as tk
-    from threading import Thread
-    import webbrowser
+    print(f"""
+Добро пожаловать в {APPLICATION_FOLDER} v{VERSION}!
 
-    async def _on_start_btn():
-        try:
-            bot_token: str = bot_token_entry.get().strip()
-            telegram_id: int = int(telegram_id_entry.get().strip())
-            license_key: str = license_key_entry.get().strip()
+При первом запуске робота необходмо ввести некоторые данные, в будущем эти данные
+будут автоматически предзаполнены, и когда программа просит их ввести, если Вы
+не хотите их менять - нужно нажать клавишу ENTER
 
-            _Validator.validate_bot_token(bot_token=bot_token)
-            _Validator.valite_license_key(license_key=license_key)
+                            [1. Токен бота]
+Его можно получить при создании телеграм бота, который будет выступать в качестве
+панели управления роботом. Создать телеграм бота можно тут: -> https://t.me/BotFather
 
-            secrets.bot_token = bot_token
-            secrets.admin_telegram_id = telegram_id
-            secrets.license_key = license_key
+                            [2. Телеграм ID]
+Телеграм ID нужен, чтобы бот отвечал только на Ваши сообщения, получить его можно
+отправив любое сообщение с Вашего аккаунта в этого бота: -> https://t.me/getmyid_bot
 
-            await db.secrets_repo.update(secrets)
+                            [3. Ключ лицензии]
+Ключ лицензии нужен для взаимодействия с главным сервером, который генерирует сигналы,
+приобрести его можно тут: -> https://t.me/Anton_Filipchuk
 
-        except Exception as e:
-            header.config(text=f"Ошибка: {e}", foreground="red")
+""")
+
+    # Ввод токена телеграм бота
+    while True:
+        if not secrets.bot_token:
+            bot_input_text: str = "\nВведите токен бота.\n-> "
         else:
-            # w.quit()
-            w.destroy()
+            bot_input_text: str = (f"\nВведите токен бота.\nВведите пустую строку, чтобы использовать "
+                                   f"'{secrets.bot_token}'\n -> ")
+        bot_token_input: str = input(bot_input_text)
+        bot_token = secrets.bot_token if not bot_token_input.strip() else bot_token_input.strip()
 
-    w: tk.Tk = tk.Tk()
-    w.title(APPLICATION_FOLDER + " v" + VERSION)
-    w.geometry("350x450+500+500")
+        try:
+            _Validator.validate_bot_token(bot_token=bot_token)
+            logger.success("Токен телеграм бота успешно прошел проверку.")
+            break
+        except Exception as e:
+            logger.error(f"Ошибка при проверке токена бота: {e}")
 
-    header = tk.Label(w, text="")
-    header.pack()
-    tk.Label().pack()
+    # Ввод телеграм айди пользователя
+    if not secrets.admin_telegram_id:
+        telegram_id_input_text: str = "\nВведите Ваш телеграм айди.\n-> "
+    else:
+        telegram_id_input_text: str = (f"\nВведите Ваш телеграм айди\nВведите пустую строку, чтобы использовать "
+                                       f"'{secrets.admin_telegram_id}'\n -> ")
+    logger.info("Если бот не будет отвечать на Ваши команды - проверьте телеграм айди.")
+    telegram_id_input: str = input(telegram_id_input_text)
+    telegram_id = secrets.admin_telegram_id if not telegram_id_input.strip() else telegram_id_input.strip()
 
-    tk.Label(w, text="Токен телеграм бота", font=("Arial", 15, "bold")).pack()
-    link_1 = tk.Label(
-        w, text="Токен бота можно получить тут (Ссылка)\n", font=("Arial", 12, "underline"), cursor="hand2")
-    link_1.bind("<Button-1>", func=lambda e: webbrowser.open_new("https://t.me/BotFather"))
-    link_1.pack()
-    bot_token_entry = tk.Entry(w)
-    bot_token_entry.insert(0, secrets.bot_token) if secrets.bot_token else None  # noqa
-    bot_token_entry.pack()
-    tk.Label().pack()
+    # Ввод ключа лицензии
+    while True:
+        if not secrets.license_key:
+            license_key_input_text: str = "\nВведите ключ лицензии.\n-> "
+        else:
+            license_key_input_text: str = (f"\nВведите ключ лицензии\nВведите пустую строку, чтобы использовать "
+                                           f"'{secrets.license_key}'\n -> ")
+        license_key_input: str = input(license_key_input_text)
+        license_key = secrets.license_key if not license_key_input.strip() else license_key_input.strip()
 
-    tk.Label(w, text="Телеграм айди", font=("Arial", 15, "bold")).pack()
-    link_2 = tk.Label(
-        w, text="Телеграм айди можно получить тут (Ссылка)\n", font=("Arial", 12, "underline"), cursor="hand2")
-    link_2.bind("<Button-1>", func=lambda e: webbrowser.open_new("https://t.me/getmyid_bot"))
-    link_2.pack()
-    telegram_id_entry = tk.Entry(w)
-    telegram_id_entry.insert(0, secrets.admin_telegram_id) if secrets.admin_telegram_id else None  # noqa
-    telegram_id_entry.pack()
-    tk.Label().pack()
+        try:
+            _Validator.valite_license_key(license_key=license_key)
+            logger.success("Ключ лицензии успешно прошел проверку.")
+            break
+        except Exception as e:
+            logger.error(f"Ошибка при проверке ключа лицензии: {e}")
 
-    tk.Label(w, text="Ключ лицензии", font=("Arial", 15, "bold")).pack()
-    link_3 = tk.Label(
-        w, text="Приобрести ключ лицензии можно тут (Ссылка)\n", font=("Arial", 12, "underline"), cursor="hand2")
-    link_3.bind("<Button-1>", func=lambda e: webbrowser.open_new("https://t.me/getmyid_bot"))
-    link_3.pack()
-    license_key_entry = tk.Entry(w)
-    license_key_entry.insert(0, secrets.license_key) if secrets.license_key else None  # noqa
-    license_key_entry.pack()
-    tk.Label().pack()
+    secrets.bot_token = bot_token
+    secrets.admin_telegram_id = telegram_id
+    secrets.license_key = license_key
 
-    tk.Button(w, text="Запуск", command=lambda: Thread(
-        daemon=True,
-        target=asyncio.run,
-        args=(_on_start_btn(),)
-    ).start()).pack()
-
-    w.mainloop()
+    await db.secrets_repo.update(secrets)
 
 
-async def _cli_case(db: Database, secrets: SecretsORM) -> None:
+async def _from_json_case(db: Database, secrets: SecretsORM) -> None:
     """
     Кейс, при котором не нужно отображать графический интерфейс.
     Подходит для Linux - серверов.
@@ -171,11 +171,13 @@ async def main() -> None:
 
     match system:
         case "Darwin" | "Windows":
-            await _gui_case(db, secrets)
-        case _:
+            # await _cli_case(db, secrets)  # todo
             await _cli_case(db, secrets)
+        case _:
+            await _from_json_case(db, secrets)
 
     await start_bot()
+
 
 if __name__ == '__main__':
     asyncio.run(main())

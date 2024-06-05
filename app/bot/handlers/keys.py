@@ -51,7 +51,7 @@ async def keys_command_handler(message: types.Message, command: CommandObject, d
                     raise KeyError("В настройках API ключа нужно разрешить торговлю фьючерсами.")
                 await message.answer("Ключи прошли проверку.")
     except Exception as e:
-        return await message.answer(f"Произошла ошибка при валидации API ключей: {e}")
+        return await message.answer(f"Произошла ошибка при проверке API ключей: {e}")
 
     await db.secrets_repo.update(secrets)
-    return await message.answer("Ключ обновлен. После введения второго ключа происходит их валидация.")
+    return await message.answer("Ключ обновлен. После введения второго ключа происходит их проверка.")

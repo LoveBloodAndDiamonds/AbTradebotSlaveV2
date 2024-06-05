@@ -1,14 +1,21 @@
 from abc import ABC, abstractmethod
 
+from app.database import SecretsORM
 from app.logic.schemas import Signal, UserStrategySettings
 
 
-class Exchange(ABC):
+class ABCExchange(ABC):
 
-    def __init__(self, signal: Signal, user_strategy: UserStrategySettings) -> None:
+    def __init__(
+            self,
+            signal: Signal,
+            user_strategy: UserStrategySettings,
+            secrets: SecretsORM
+    ) -> None:
+        self._secrets = secrets
         self._signal = signal
         self._user_strategy = user_strategy
 
     @abstractmethod
-    async def handle_signal(self) -> None:
+    async def process_signal(self) -> None:
         pass

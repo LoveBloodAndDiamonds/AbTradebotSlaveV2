@@ -18,7 +18,8 @@ async def start_bot() -> None:
 
     bot = Bot(token=secrets.bot_token, default=DefaultBotProperties(parse_mode="HTML", link_preview_is_disabled=True))
 
-    logic: Logic = Logic(license_key=secrets.license_key)
+    # Инициализируем главный объект логики, который отвечает за стратегии пользователя
+    logic: Logic = Logic(db=db, license_key=secrets.license_key)
     asyncio.create_task(logic.start_logic())  # noqa
 
     # Создаем диспатчер

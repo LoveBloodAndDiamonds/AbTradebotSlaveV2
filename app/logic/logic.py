@@ -7,6 +7,9 @@ import websockets
 
 from app.config import logger, VERSION
 from .schemas import UserStrategySettings, Signal
+from .exchanges import EXCHANGES
+from .utils import AlertWorker
+from app.database import Database, SecretsORM
 
 
 class Logic:
@@ -15,7 +18,8 @@ class Logic:
     прослушивать сообщения с сигналами и запускать эти сигналы.
     """
 
-    def __init__(self, license_key: str) -> None:
+    def __init__(self, db: Database, license_key: str) -> None:
+        self._db = db
         self._license_key: str = license_key
 
         _, self._host, self._port = self._parse_license_key()
@@ -33,6 +37,25 @@ class Logic:
         Запуск логики соединения с мастер-вебсокетом.
         :return:
         """
+        # Инициализируем рабочего, который будет отправлять сигналы о позициях
+        # AlertWorker.init_worker(bot=bot, admin_id=secrets.admin_telegram_id)  # todo
+
+        await self._queue.put(
+            {
+                "strategy": "test",
+                "ticker": "XRPUSDT",
+                "exchange": "BINANCE",
+                "take_profit": 0.54,
+                "stop_loss": 0.52,
+                "breakeven": 0.54
+            }
+        )
+        self._active_strategies["test"] = UserStrategySettings(
+            risk_usdt=1,
+            trades_count=None
+        )
+        # todo
+
         # Запускаем асихнронный сбор и обработку информации
         await asyncio.gather(self._connect_to_master(), self._worker())
 
@@ -72,6 +95,29 @@ class Logic:
             try:
                 msg: dict = await self._queue.get()
                 signal: Signal = Signal.from_dict(signal_dict=msg)
+                if signal.strategy in self._active_strategies:
+                    user_strategy: UserStrategySettings = self._active_strategies[signal.strategy]
+                    logger.info(f"Got {signal} from ws")
+                    await AlertWorker.send_alert(f"Получен сигнал по стратегии {signal.strategy}")
+                    secrets: SecretsORM = await self._db.secrets_repo.get()
+                    exchange = EXCHANGES[signal.exchange](
+                        secrets=secrets,
+                        signal=signal,
+                        user_strategy=user_strategy
+                    )
+                    await exchange.process_signal()
+
+                    if user_strategy.trades_count is not None:
+                        self._active_strategies[signal.strategy].trades_count -= 1
+                        if self._active_strategies[signal.strategy].trades_count == 0:
+                            await AlertWorker.send_alert(f"Стратегия {signal.strategy} "
+                                                         f"выполнила указанное количество сделок.")
+                            del self._active_strategies[signal.strategy]
+                            return
+
+                else:
+                    logger.debug(f"Ignore {signal} from ws")
+
             except json.decoder.JSONDecodeError:
                 logger.error(f"WS Error while decode msg: {msg}")
             except Exception as e:
