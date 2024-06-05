@@ -6,7 +6,7 @@ authors = ["blowyourbra1n <blowyourbra1n@mail.ru>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.13"
+python = ">=3.10,<3.13"
 aiogram = "^3.7.0"
 python-binance = "^1.0.19"
 loguru = "^0.7.2"
