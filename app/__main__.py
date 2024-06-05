@@ -8,7 +8,7 @@ import platform
 import requests
 
 from app.bot import start_bot
-from app.config import DATABASE_URL, APPLICATION_FOLDER, VERSION, log_errors, logger
+from app.config import DATABASE_URL, APPLICATION_FOLDER, VERSION, log_errors, logger, FOLDER_PATH, LOGS_FOLDER_PATH
 from app.database import Database, SecretsORM
 
 
@@ -53,6 +53,7 @@ class _Validator:
             raise Exception(f"Ошибка при валидации ключа лицензии: {e}")
 
 
+@log_errors
 async def _cli_case(db: Database, secrets: SecretsORM) -> None:
     """
     Кейс, при котором надо отобразить графический интерфейс.
@@ -64,8 +65,15 @@ async def _cli_case(db: Database, secrets: SecretsORM) -> None:
 
 При первом запуске робота необходмо ввести некоторые данные, в будущем эти данные
 будут автоматически предзаполнены, и когда программа просит их ввести, если Вы
-не хотите их менять - нужно нажать клавишу ENTER
+не хотите их менять - нужно нажать клавишу ENTER.
 
+Все секретные данные хранятся на Вашем компьютере по пути:
+{FOLDER_PATH}
+Логи хранятся по пути:
+{LOGS_FOLDER_PATH}
+При закрытии консоли - робот перестанет работать.
+В консоли отображаются логи программы.
+ 
                             [1. Токен бота]
 Его можно получить при создании телеграм бота, который будет выступать в качестве
 панели управления роботом. Создать телеграм бота можно тут: -> https://t.me/BotFather
@@ -103,9 +111,9 @@ async def _cli_case(db: Database, secrets: SecretsORM) -> None:
     else:
         telegram_id_input_text: str = (f"\nВведите Ваш телеграм айди\nВведите пустую строку, чтобы использовать "
                                        f"'{secrets.admin_telegram_id}'\n -> ")
-    logger.info("Если бот не будет отвечать на Ваши команды - проверьте телеграм айди.")
     telegram_id_input: str = input(telegram_id_input_text)
     telegram_id = secrets.admin_telegram_id if not telegram_id_input.strip() else telegram_id_input.strip()
+    logger.info("Если бот не будет отвечать на Ваши команды - проверьте телеграм айди.")
 
     # Ввод ключа лицензии
     while True:
@@ -124,11 +132,13 @@ async def _cli_case(db: Database, secrets: SecretsORM) -> None:
         except Exception as e:
             logger.error(f"Ошибка при проверке ключа лицензии: {e}")
 
+    # Обновление данных в базе данных.
     secrets.bot_token = bot_token
     secrets.admin_telegram_id = telegram_id
     secrets.license_key = license_key
-
     await db.secrets_repo.update(secrets)
+
+    logger.info(f"Происходит запсуск робота!\n\n")
 
 
 async def _from_json_case(db: Database, secrets: SecretsORM) -> None:
@@ -171,7 +181,6 @@ async def main() -> None:
 
     match system:
         case "Darwin" | "Windows":
-            # await _cli_case(db, secrets)  # todo
             await _cli_case(db, secrets)
         case _:
             await _from_json_case(db, secrets)

@@ -19,7 +19,11 @@ async def start_bot() -> None:
     bot = Bot(token=secrets.bot_token, default=DefaultBotProperties(parse_mode="HTML", link_preview_is_disabled=True))
 
     # Инициализируем главный объект логики, который отвечает за стратегии пользователя
-    logic: Logic = Logic(db=db, license_key=secrets.license_key)
+    logic: Logic = Logic(
+        license_key=secrets.license_key,
+        db=db,
+        bot=bot
+    )
     asyncio.create_task(logic.start_logic())  # noqa
 
     # Создаем диспатчер
@@ -38,7 +42,7 @@ async def start_bot() -> None:
     await set_up_commands(bot)
 
     # Выводим сообщение о запуске бота
-    logger.warning(f"Бот @{(await bot.get_me()).username} запущен!")
+    logger.success(f"Бот @{(await bot.get_me()).username} запущен!")
 
     # Запуск бота
     await dp.start_polling(

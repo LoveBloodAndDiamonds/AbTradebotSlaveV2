@@ -17,7 +17,7 @@ async def stop_command_handler(message: types.Message, command: CommandObject, l
 
     strategy_name: str = command.args.strip()
     try:
-        logic.stop_active_strategy(strategy_name=strategy_name, stop_all=strategy_name == "*")
+        logic.remove_user_startegy(strategy_name=strategy_name, stop_all=strategy_name == "*")
     except Exception as e:
         return await message.answer(f"Ошибка при остановке стратегии: {e}")
     if strategy_name == "*":

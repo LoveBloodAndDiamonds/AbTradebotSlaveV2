@@ -38,7 +38,7 @@ async def trade_command_handler(message: types.Message, command: CommandObject, 
         return await message.answer(f"Ошибка при парсинге введеного сообщения: {e}")
 
     try:
-        await logic.start_strategy(
+        await logic.add_user_strategy(
             strategy_name=strategy_name,
             risk_usdt=risk_usdt,
             trades_count=int(trades_count) if trades_count else None
