@@ -2,8 +2,8 @@ from aiogram import types
 from aiogram.filters import CommandObject
 from binance import Client
 
-from app.logic.connectors.bybit_con import AsyncClient
 from app.database import Database, SecretsORM
+from app.logic.connectors.bybit_con import AsyncClient
 
 
 async def keys_command_handler(message: types.Message, command: CommandObject, db: Database) -> types.Message:

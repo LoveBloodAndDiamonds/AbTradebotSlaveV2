@@ -1,16 +1,11 @@
-import base64
+import hashlib
 import hmac
 import os
-
-import httpx
-import hashlib
 import time
 
+import httpx
 import orjson
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
-from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
 
 class BaseClient:
@@ -20,10 +15,10 @@ class BaseClient:
     REQUEST_TIMEOUT: float = 5
 
     def __init__(
-        self,
-        api_key: str | None = None,
-        api_secret: str | None = None,
-        receive_window: int = 5000,
+            self,
+            api_key: str | None = None,
+            api_secret: str | None = None,
+            receive_window: int = 5000,
     ):
         """API Client constructor
         :param api_key: Api Key
@@ -57,7 +52,7 @@ class BaseClient:
             prepared_str = str(timestamp_milli) + self.API_KEY + str(self.receive_window) + str(request.url.params)
         else:
             prepared_str = (
-                str(timestamp_milli) + self.API_KEY + str(self.receive_window) + request.content.decode("utf-8")
+                    str(timestamp_milli) + self.API_KEY + str(self.receive_window) + request.content.decode("utf-8")
             )
         prepared_bytes = prepared_str.encode("utf-8")
         return hmac.new(self.API_SECRET.encode("utf-8"), prepared_bytes, hashlib.sha256).hexdigest()
@@ -77,20 +72,20 @@ class BaseClient:
 
 class AsyncClient(BaseClient):
     def __init__(
-        self,
-        api_key: str | None = None,
-        api_secret: str | None = None,
-        receive_window: int = 5000,
+            self,
+            api_key: str | None = None,
+            api_secret: str | None = None,
+            receive_window: int = 5000,
     ):
         super().__init__(api_key, api_secret, receive_window)
         self.session: httpx.AsyncClient = httpx.AsyncClient(http2=True)
 
     @classmethod
     async def create(
-        cls,
-        api_key: str | None = None,
-        api_secret: str | None = None,
-        receive_window: int = 5000,
+            cls,
+            api_key: str | None = None,
+            api_secret: str | None = None,
+            receive_window: int = 5000,
     ) -> "AsyncClient":
         self = cls(api_key, api_secret, receive_window)
 

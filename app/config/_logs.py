@@ -20,7 +20,7 @@ for level in ["ERROR", "INFO", "DEBUG"]:
                       "<bold>{message}</bold>",
                rotation="5 MB",
                compression='zip')
-    
+
 # Логирование в консоль
 logger.add(sys.stderr, level="DEBUG",
            format="<white>{time: %d.%m %H:%M:%S}</white>|"
@@ -34,10 +34,12 @@ def log_args(func):
     :param func:
     :return:
     """
+
     def wrapper(*args, **kwargs):
         logger.debug(f"Функция {func.__name__} принимает: args={args}, kwargs={kwargs}")
         result = func(*args, **kwargs)
-        logger.debug(f"Функция {func.__name__} возвращает: {result}")
+        if result:
+            logger.debug(f"Функция {func.__name__} возвращает: {result}")
         return result
 
     return wrapper
@@ -49,6 +51,7 @@ def log_errors(func):
     :param func:
     :return:
     """
+
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)

@@ -83,7 +83,6 @@ class ExchangeInfo(ABCExchangeInfo):
 
             except Exception as error:
                 logger.error(f"{type(error)} in _update_data in symbols_decimals worker: {error}.")
-            logger.debug("Bybit symbols data was updated")
             time.sleep(60 * 60)
 
     @classmethod

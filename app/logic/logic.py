@@ -5,7 +5,7 @@ from datetime import datetime
 import aiohttp
 import websockets
 
-from app.config import logger, VERSION, WS_RECONNECT_TIMEOUT, WS_WORKERS_COUNT
+from app.config import logger, log_args, VERSION, WS_RECONNECT_TIMEOUT, WS_WORKERS_COUNT
 from app.database import Database, SecretsORM
 from .connectors import EXCHANGES_CLASSES_FROM_ENUM
 from .schemas import UserStrategySettings, Signal, Exchange
@@ -47,6 +47,7 @@ class Logic:
         # Запускаем асихнронный сбор и обработку информации
         await asyncio.gather(self._connect_to_master(), *workers)
 
+    @log_args
     async def get_license_key_expired_date(self) -> datetime:
         """
         Функция получает время истечения подписки в формате timestamp и возвращает
@@ -60,6 +61,7 @@ class Logic:
                     raise Exception(result["error"])
                 return datetime.fromtimestamp(result["result"])
 
+    @log_args
     async def add_user_strategy(self, strategy_name: str, risk_usdt: float, trades_count: int | None) -> None:
         """
         Функция добавляет стратегию в словарь активных стратегий.
@@ -82,6 +84,7 @@ class Logic:
             risk_usdt=risk_usdt,
             trades_count=trades_count)
 
+    @log_args
     def remove_user_startegy(self, strategy_name: str = "", stop_all: bool = False) -> None:
         """
         Функция удаляет активную стратегию пользователя.
@@ -96,6 +99,7 @@ class Logic:
                 raise ValueError(f"Стратегия {strategy_name} не существует или не запущена.")
             del self._active_strategies[strategy_name.lower()]
 
+    @log_args
     def get_active_user_strategies(self) -> dict[str, UserStrategySettings]:
         """
         Функция возвращает словарь с активными стратегиями пользователя.
@@ -222,7 +226,6 @@ class Logic:
             return self._secrets.bybit_api_key, self._secrets.bybit_api_secret
         else:
             raise ValueError("Wrong signal exchange")
-
 
 # self._active_strategies["test"] = UserStrategySettings(
 #     trades_count=10,

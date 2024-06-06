@@ -1,8 +1,8 @@
 from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
 
-from app.database import SecretsORM
 from app.config import logger
+from app.database import SecretsORM
 
 
 class AlertWorker:

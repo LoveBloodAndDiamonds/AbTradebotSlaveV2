@@ -2,14 +2,13 @@ from aiogram import Bot, Dispatcher
 from aiogram.filters import Command
 from aiogram.types import BotCommand
 
-from .start import start_command_handler
 from .help import help_command_handler
 from .keys import keys_command_handler
 from .license import license_command_handler
-from .trade import trade_command_handler
-from .stop import stop_command_handler
+from .start import start_command_handler
 from .status import status_command_handler
-
+from .stop import stop_command_handler
+from .trade import trade_command_handler
 
 bot_commands = (
     ("help", "Инструкция и список команд"),
