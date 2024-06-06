@@ -5,7 +5,7 @@
 
 
 ### Windows
-[Ссылка на установщик](compiled/Windows)
+[Ссылка на установщик](portable/Windows/AbTradebotInstaller.exe)
 
 ---
 
