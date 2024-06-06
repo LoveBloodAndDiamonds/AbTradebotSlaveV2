@@ -39,6 +39,9 @@ class Bybit(ABCExchange):
             if not await self._is_available_to_open_position():
                 return False
 
+            # Отправляем лог, что начинается обработка стратегии
+            await AlertWorker.warning(f"Запуск стратегии {self._signal.strategy}")
+
             # Отменяем все старые ордера, которые были на монете
             await self.bybit.cancel_all_orders(category=self.category, symbol=self.symbol)
 

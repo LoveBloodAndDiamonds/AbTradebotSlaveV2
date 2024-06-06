@@ -171,8 +171,6 @@ class Logic:
                 else:
                     logger.info(f"Process signal: {signal}")
 
-                await AlertWorker.warning(f"Запуск стратегии {signal.strategy}")
-
                 # Запускаем стратегию
                 api_key, api_secret = await self._get_keys_to_exchange(exchange=signal.exchange)
                 exchange = EXCHANGES_CLASSES_FROM_ENUM[signal.exchange](
