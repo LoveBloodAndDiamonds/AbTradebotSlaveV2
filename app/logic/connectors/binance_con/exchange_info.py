@@ -43,6 +43,7 @@ class ExchangeInfo(ABCExchangeInfo):
                             "price": tick_size,
                             "quantity": step_size
                         }
+                    logger.debug("Binance symbols data was updated")
             except Exception as e:
                 logger.error(f"Preisions error: {e}")
             time.sleep(60 * 60)
