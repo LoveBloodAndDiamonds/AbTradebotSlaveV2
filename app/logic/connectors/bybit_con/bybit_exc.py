@@ -134,6 +134,8 @@ class Bybit(ABCExchange):
         responce = await self.bybit.place_order(**params)
 
         if responce.get("retMsg") == "OK":
+            await AlertWorker.success(f"Открыт ордер по {self.symbol} размером {params['qty']},"
+                                      f" take={params['takeProfit']}, stop={params['stopLoss']}")
             return responce
         else:
             logger.error(f"Error while creating order: {responce}")
