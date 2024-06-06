@@ -16,10 +16,11 @@ class ExchangeInfo(ABCExchangeInfo):
     binance = Client()
     precisions: dict[str: list[int, int]] = {}
 
-    def run(self) -> None:
+    @classmethod
+    def run(cls) -> None:
         while True:
             try:
-                exchange_info_dict: dict = self.binance.futures_exchange_info()
+                exchange_info_dict: dict = cls.binance.futures_exchange_info()
                 for i in exchange_info_dict['symbols']:
                     filters = i['filters']
                     tick_size, step_size = None, None
@@ -38,7 +39,7 @@ class ExchangeInfo(ABCExchangeInfo):
                                 step_size = 0
                             else:
                                 step_size = len(step_size) - 2
-                        self.precisions[i['symbol'].upper()] = {
+                        cls.precisions[i['symbol'].upper()] = {
                             "price": tick_size,
                             "quantity": step_size
                         }

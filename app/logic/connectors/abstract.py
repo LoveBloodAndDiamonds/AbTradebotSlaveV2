@@ -27,18 +27,6 @@ class ABCExchange(ABC):
     async def process_signal(self) -> bool:
         pass
 
-    @abstractmethod
-    def _define_position_side(self) -> None:
-        pass
-
-    @abstractmethod
-    async def _define_ticker_last_price(self) -> None:
-        pass
-
-    @abstractmethod
-    def _define_position_quantity(self) -> None:
-        pass
-
 
 class ABCExchangeInfo(ABC, Thread):
     """

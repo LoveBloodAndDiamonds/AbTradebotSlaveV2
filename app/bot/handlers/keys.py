@@ -1,8 +1,8 @@
 from aiogram import types
 from aiogram.filters import CommandObject
 from binance import Client
-from pybit.unified_trading import UserHTTP
 
+from app.logic.connectors.bybit_con import AsyncClient
 from app.database import Database, SecretsORM
 
 
@@ -25,6 +25,7 @@ async def keys_command_handler(message: types.Message, command: CommandObject, d
                                     f"bybit secret:\n<tg-spoiler>{secrets.bybit_api_secret}</tg-spoiler>")
 
     key: str = command.args.strip()
+
     match command.command:
         case "key_binance":
             secrets.binance_api_key = key
@@ -45,10 +46,8 @@ async def keys_command_handler(message: types.Message, command: CommandObject, d
                 await message.answer("Ключи прошли проверку.")
         if command.command in ["key_bybit", "secret_bybit"]:
             if all([secrets.bybit_api_key, secrets.bybit_api_secret]):
-                client = UserHTTP(api_key=secrets.bybit_api_key, api_secret=secrets.bybit_api_secret)
-                key_info = client.get_api_key_information()
-                if key_info["result"]["readOnly"] != 0:
-                    raise KeyError("В настройках API ключа нужно разрешить торговлю фьючерсами.")
+                client = await AsyncClient.create(api_key=secrets.bybit_api_key, api_secret=secrets.bybit_api_secret)
+                await client.get_wallet_balance(accountType="UNIFIED")
                 await message.answer("Ключи прошли проверку.")
     except Exception as e:
         return await message.answer(f"Произошла ошибка при проверке API ключей: {e}")

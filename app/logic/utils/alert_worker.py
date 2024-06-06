@@ -2,6 +2,7 @@ from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
 
 from app.database import SecretsORM
+from app.config import logger
 
 
 class AlertWorker:
@@ -33,6 +34,7 @@ class AlertWorker:
             chat_id=cls.ADMIN_ID,
             text=message
         )
+        logger.debug(f"Alert {message} was sent")
 
     @classmethod
     async def success(cls, message: str) -> None:

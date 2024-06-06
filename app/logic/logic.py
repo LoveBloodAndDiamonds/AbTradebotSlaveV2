@@ -222,3 +222,17 @@ class Logic:
             return self._secrets.bybit_api_key, self._secrets.bybit_api_secret
         else:
             raise ValueError("Wrong signal exchange")
+
+
+# self._active_strategies["test"] = UserStrategySettings(
+#     trades_count=10,
+#     risk_usdt=0.5
+# )
+# await self._queue.put({
+#     "strategy": "test",
+#     "ticker": "TRXUSDT",
+#     "exchange": "BINANCE",
+#     "take_profit": 0.116,
+#     "stop_loss": 0.114,
+#     "breakeven": 0.116
+# })

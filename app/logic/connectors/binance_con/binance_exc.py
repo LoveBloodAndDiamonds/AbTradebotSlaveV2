@@ -17,7 +17,7 @@ class Binance(ABCExchange):
 
         self.binance: AsyncClient | None = None
 
-    async def init_client(self) -> None:
+    async def _init_client(self) -> None:
         """
         Функция инициализирует клиент для работы с биржей.
         :return:
@@ -34,7 +34,7 @@ class Binance(ABCExchange):
         """
         try:
             # Инициализация клиента для работы с биржей
-            await self.init_client()
+            await self._init_client()
 
             # Проверка на то, есть ли уже открытая позицичя по тикеру
             if not await self._is_available_to_open_position():
@@ -98,6 +98,7 @@ class Binance(ABCExchange):
         except Exception as e:
             logger.exception(f"Error while process signal: {e}")
             await AlertWorker.send(f"Ошибка при обработке сигнала: {e}")
+            return False
 
     async def _is_available_to_open_position(self) -> bool:
         """
@@ -134,7 +135,7 @@ class Binance(ABCExchange):
     async def _create_order(self, order: dict) -> dict | bool:
         """
         Функция создает ордер.
-        Возвращает True, если ордер успешно создан, и False - если есть ошибка.
+        Возвращает dict, если ордер успешно создан, и False - если есть ошибка.
         {'orderId': 57899850340, 'symbol': 'XRPUSDT', 'status': 'NEW',
           'clientOrderId': 'wNFWvZUcxBpajxwOoUhcB7', 'price': '0.0000', 'avgPrice': '0.00', 'origQty': '70.3',
           'executedQty': '0.0', 'cumQty': '0.0', 'cumQuote': '0.00000', 'timeInForce': 'GTC', 'type': 'MARKET',

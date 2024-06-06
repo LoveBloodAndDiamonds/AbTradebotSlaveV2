@@ -11,10 +11,10 @@ from ..abstract import ABCExchangeInfo
 
 class ExchangeInfo(ABCExchangeInfo):
     """Thread what update symbols decimals"""
-    _instance = None
     symbols_data = dict()
 
-    def run(self):
+    @classmethod
+    def run(cls):
         """Update symbols decimals.
         data variable example:
 
@@ -79,7 +79,8 @@ class ExchangeInfo(ABCExchangeInfo):
 
                     precision_dict[el["symbol"]] = [tick_size, step_size]
 
-                self.symbols_data = precision_dict
+                cls.symbols_data = precision_dict
+                logger.debug("Symbols data was updated")
 
             except Exception as error:
                 logger.error(f"{type(error)} in _update_data in symbols_decimals worker: {error}.")
