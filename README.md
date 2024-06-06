@@ -38,6 +38,12 @@
 ---
 
 ### Compile Notes:
+
+#### Windows:
+```shell
+nuitka --follow-imports --include-package=websockets --standalone --windows-icon-from-ico=static/app_icon.ico app/__main__.py
+```
+
 #### MacOS:
 ModuleNotFoundError:
     traceback like "no module named 'app' in 11 str'"
