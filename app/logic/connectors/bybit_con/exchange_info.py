@@ -80,10 +80,10 @@ class ExchangeInfo(ABCExchangeInfo):
                     precision_dict[el["symbol"]] = [tick_size, step_size]
 
                 cls.symbols_data = precision_dict
-                logger.debug("Bybit symbols data was updated")
 
             except Exception as error:
                 logger.error(f"{type(error)} in _update_data in symbols_decimals worker: {error}.")
+            logger.debug("Bybit symbols data was updated")
             time.sleep(60 * 60)
 
     @classmethod
