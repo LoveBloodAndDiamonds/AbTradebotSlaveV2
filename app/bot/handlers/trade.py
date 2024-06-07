@@ -6,18 +6,39 @@ from aiogram.filters import CommandObject
 from app.logic import Logic
 
 
-def _parse_command(command: CommandObject) -> tuple[str, float, None | int]:
-    if len(command.args.split(" ")) == 3:
-        strategy_name, risk_usdt, trades_count = command.args.split(" ")
-    elif len(command.args.split(" ")) == 2:
-        strategy_name, risk_usdt = command.args.split(" ")
-        trades_count = None
-    risk_usdt = float(risk_usdt.replace("$", "").strip())
+def _parse_command(command: CommandObject) -> list[list]:
+    """
+    Функция парсит введенную команду с возможностью ввести несколько стратегий в одной команде.
+    Возвращает список списков по настройке стратегии вида:
+    [[strategy_name: str, risk_usdt: float, trades_count: int | None], ..., ...].
+    :param command:
+    :return:
+    """
+    strategies_params: list[list[str, float, int | None]] = []  # noqa
 
-    return strategy_name, risk_usdt, trades_count
+    for line in command.args.split("\n"):
+
+        line: str = line.strip()
+
+        if not line:
+            continue
+
+        if len(line.split(" ")) == 3:
+            strategy_name, risk_usdt_str, trades_count = line.split(" ")
+            trades_count = int(trades_count)
+
+        elif len(line.split(" ")) == 2:
+            strategy_name, risk_usdt_str = line.split(" ")
+            trades_count = None
+
+        risk_usdt: float = float(risk_usdt_str.replace("$", "").strip())
+
+        strategies_params.append([strategy_name, risk_usdt, trades_count])  # noqa
+
+    return strategies_params
 
 
-async def trade_command_handler(message: types.Message, command: CommandObject, logic: Logic) -> types.Message:
+async def trade_command_handler(message: types.Message, command: CommandObject, logic: Logic) -> types.Message | None:
     """/trade command"""
     try:
         license_key_expired_date: datetime = await logic.get_license_key_expired_date()
@@ -39,18 +60,18 @@ async def trade_command_handler(message: types.Message, command: CommandObject, 
         )
 
     try:
-        strategy_name, risk_usdt, trades_count = _parse_command(command)
+        strategies_params: list[list] = _parse_command(command)
     except Exception as e:
         return await message.answer(f"🛑 Произошла ошибка при парсинге сообщения: {e}")
 
-    try:
-        await logic.add_user_strategy(
-            strategy_name=strategy_name,
-            risk_usdt=risk_usdt,
-            trades_count=int(trades_count) if trades_count else None
-        )
-    except Exception as e:
-        return await message.answer(f"🛑 Ошибка при запуске стратегии: {e}")
-
-    return await message.answer(f"✅ Стратегия {strategy_name} с риском {risk_usdt}$ на "
-                                f"{trades_count if trades_count else '∞'} сделок добавлена.")
+    for strategy_name, risk_usdt, trades_count in strategies_params:
+        try:
+            await logic.add_user_strategy(
+                strategy_name=strategy_name,
+                risk_usdt=risk_usdt,
+                trades_count=trades_count if trades_count else None)
+        except Exception as e:
+            await message.answer(f"🛑 Ошибка при запуске стратегии: {e}")
+        else:
+            await message.answer(f"✅ Стратегия {strategy_name} с риском {risk_usdt}$ на "
+                                 f"{trades_count if trades_count else '∞'} сделок добавлена.")
