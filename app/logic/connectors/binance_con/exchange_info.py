@@ -13,11 +13,13 @@ from ..abstract import ABCExchangeInfo
 
 
 class ExchangeInfo(ABCExchangeInfo):
-    binance = Client()
     precisions: dict[str: list[int, int]] = {}
+    binance: Client = None
 
     @classmethod
     def run(cls) -> None:
+        cls.binance = Client()  # init it in thread
+
         while True:
             try:
                 exchange_info_dict: dict = cls.binance.futures_exchange_info()
