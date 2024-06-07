@@ -6,7 +6,7 @@ from aiogram.filters import CommandObject
 from app.logic import Logic
 
 
-async def _parse_command(command: CommandObject) -> tuple[str, float, None | int]:
+def _parse_command(command: CommandObject) -> tuple[str, float, None | int]:
     if len(command.args.split(" ")) == 3:
         strategy_name, risk_usdt, trades_count = command.args.split(" ")
     elif len(command.args.split(" ")) == 2:
