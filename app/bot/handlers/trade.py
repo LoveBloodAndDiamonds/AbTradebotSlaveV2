@@ -6,6 +6,17 @@ from aiogram.filters import CommandObject
 from app.logic import Logic
 
 
+async def _parse_command(command: CommandObject) -> tuple[str, float, None | int]:
+    if len(command.args.split(" ")) == 3:
+        strategy_name, risk_usdt, trades_count = command.args.split(" ")
+    elif len(command.args.split(" ")) == 2:
+        strategy_name, risk_usdt = command.args.split(" ")
+        trades_count = None
+    risk_usdt = float(risk_usdt.replace("$", "").strip())
+
+    return strategy_name, risk_usdt, trades_count
+
+
 async def trade_command_handler(message: types.Message, command: CommandObject, logic: Logic) -> types.Message:
     """/trade command"""
     try:
@@ -28,14 +39,9 @@ async def trade_command_handler(message: types.Message, command: CommandObject, 
         )
 
     try:
-        if len(command.args.split(" ")) == 3:
-            strategy_name, risk_usdt, trades_count = command.args.split(" ")
-        elif len(command.args.split(" ")) == 2:
-            strategy_name, risk_usdt = command.args.split(" ")
-            trades_count = None
-        risk_usdt = float(risk_usdt.replace("$", "").strip())
+        strategy_name, risk_usdt, trades_count = _parse_command(command)
     except Exception as e:
-        return await message.answer(f"🛑 Ошибка при парсинге введеного сообщения: {e}")
+        return await message.answer(f"🛑 Произошла ошибка при парсинге сообщения: {e}")
 
     try:
         await logic.add_user_strategy(
@@ -46,5 +52,5 @@ async def trade_command_handler(message: types.Message, command: CommandObject, 
     except Exception as e:
         return await message.answer(f"🛑 Ошибка при запуске стратегии: {e}")
 
-    return await message.answer(
-        f"✅ Стратегия {strategy_name} с риском {risk_usdt}$ на {trades_count if trades_count else '∞'} сделок добавлена.")
+    return await message.answer(f"✅ Стратегия {strategy_name} с риском {risk_usdt}$ на "
+                                f"{trades_count if trades_count else '∞'} сделок добавлена.")

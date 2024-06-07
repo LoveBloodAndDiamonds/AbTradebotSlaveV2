@@ -7,6 +7,22 @@ from aiogram.types import CallbackQuery, Message
 from app.config import logger
 
 
+def _hide_keys(data: str) -> str:
+    """
+    Функция прячет ключи из логов.
+    :param data:
+    :return:
+    """
+    try:
+        splitted_data = data.split(" ")
+        if splitted_data[0] in ["/key_bybit", "/secret_bybit", "/key_binance", "/secret_binance"]:
+            data = splitted_data[0] + " " + "*" * len(splitted_data[1])
+    except Exception as e:
+        logger.error(f"Error while middleware logs: {e}")
+
+    return data
+
+
 class LogsMiddleware(BaseMiddleware):
     """This middleware logs users actions"""
 
@@ -32,12 +48,7 @@ class LogsMiddleware(BaseMiddleware):
                         logger.debug(f"Can not recognize input file: {e}")
 
                 # Игнорируем логирование секретных данных
-                try:
-                    splitted_data = event_data.split(" ")
-                    if splitted_data[0] in ["/key_bybit", "/secret_bybit", "/key_binance", "/secret_binance"]:
-                        event_data = splitted_data[0] + " " + "*" * len(splitted_data[1])
-                except Exception as e:
-                    logger.error(f"Error while middleware logs: {e}")
+                _hide_keys(event_data)
 
             elif isinstance(event, CallbackQuery):
                 event_type = "Clbck"

@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "AbTradebot"
-#define MyAppVersion "2"
+#define MyAppVersion "2.01"
 #define MyAppPublisher "Filipchuk's method"
 #define MyAppURL "https://t.me/filipchuka"
 #define MyAppExeName "__main__.exe"
@@ -26,7 +26,7 @@ ChangesAssociations=yes
 DisableProgramGroupPage=yes
 ; Remove the following line to run in administrative install mode (install for all users.)
 PrivilegesRequired=lowest
-OutputDir=C:\Users\user\Desktop\Новая папка
+OutputDir=C:\Users\user\Desktop\пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 OutputBaseFilename=mysetup
 SetupIconFile=C:\Users\user\Desktop\AbTradebotSlaveV2\static\app_icon.ico
 Compression=lzma

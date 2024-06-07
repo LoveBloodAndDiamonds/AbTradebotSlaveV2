@@ -4,7 +4,37 @@ from binance import Client
 
 from app.database import Database, SecretsORM
 from app.logic.connectors.bybit_con import AsyncClient
-from app.config import logger
+
+
+async def _validate_binance_keys(api_key: str, api_secret: str) -> None:
+    """
+    Функция валидирует ключи с binance.com
+    Ничего не возвращает, но рейзит ошибки, если с ключами что-то не так.
+    """
+    client = Client(api_key=api_key, api_secret=api_secret)
+    permissions = client.get_account_api_permissions()
+    assert permissions["enableFutures"], "В настройках API ключа нужно разрешить торгволю фьючерсами."
+
+
+async def _validate_bybit_keys(api_key: str, api_secret: str) -> None:
+    """
+    Функция валидирует ключи с bybit.com
+    Ничего не возвращает, но рейзит ошибки, если с ключами что-то не так.
+    """
+    client = await AsyncClient.create(api_key=api_key, api_secret=api_secret)
+    key_info: dict = await client.get_api_key_information()
+
+    if key_info["retCode"] != 0:
+        raise ConnectionError(str(key_info))
+
+    assert "retCode" in key_info and key_info["retCode"] == 0, \
+        f"Неверный формат полученных данных от bybit.com: {key_info}"
+    assert "result" in key_info, \
+        f"Неверный формат полученных данных от bybit.com: {key_info}"
+    assert key_info["result"]["readOnly"] == 0, \
+        f"Нет доступа к записи с апи ключом: {key_info}"
+    assert key_info["result"]["permissions"]["ContractTrade"] == ["Order", "Position"], \
+        f"Нет разрешений на торговлю фьючерсами"
 
 
 async def keys_command_handler(message: types.Message, command: CommandObject, db: Database) -> types.Message:
@@ -18,7 +48,7 @@ async def keys_command_handler(message: types.Message, command: CommandObject, d
         secrets.bybit_api_key = None
         secrets.bybit_api_secret = None
         await db.secrets_repo.update(secrets)
-        return await message.answer("Ключи успешно удалены")
+        return await message.answer("✅ Ключи успешно удалены")
 
     # Добавление новых ключей
     if not command.args or command.command == "keys":
@@ -37,42 +67,28 @@ async def keys_command_handler(message: types.Message, command: CommandObject, d
                                     f"Bybit Api Key:\n<tg-spoiler> {secrets.bybit_api_key}</tg-spoiler>\n\n"
                                     f"Bybit Api Secret:\n<tg-spoiler> {secrets.bybit_api_secret}</tg-spoiler>")
 
-    key: str = command.args.strip()
-
     match command.command:
         case "key_binance":
-            secrets.binance_api_key = key
+            secrets.binance_api_key = command.args.strip()
         case "secret_binance":
-            secrets.binance_api_secret = key
+            secrets.binance_api_secret = command.args.strip()
         case "key_bybit":
-            secrets.bybit_api_key = key
+            secrets.bybit_api_key = command.args.strip()
         case "secret_bybit":
-            secrets.bybit_api_secret = key
+            secrets.bybit_api_secret = command.args.strip()
 
     try:
         if command.command in ["key_binance", "secret_binance"]:
             if all([secrets.binance_api_secret, secrets.binance_api_key]):
-                client = Client(api_key=secrets.binance_api_key, api_secret=secrets.binance_api_secret)
-                permissions = client.get_account_api_permissions()
-                if not permissions["enableFutures"]:
-                    raise KeyError("В настройках API ключа нужно разрешить торгволю фьючерсами.")
-                await message.answer("Ключи прошли проверку.")
-
+                await _validate_binance_keys(
+                    api_key=secrets.binance_api_key,
+                    api_secret=secrets.binance_api_secret)
+                await message.answer("✅ Ключи прошли проверку.")
         if command.command in ["key_bybit", "secret_bybit"]:
             if all([secrets.bybit_api_key, secrets.bybit_api_secret]):
-                client = await AsyncClient.create(api_key=secrets.bybit_api_key, api_secret=secrets.bybit_api_secret)
-                key_info: dict = await client.get_api_key_information()
-                logger.debug(f"Информация о bybit api key: {key_info}")
-
-                if key_info["retCode"] != 0:
-                    raise ConnectionError(str(key_info))
-
-                key_info: dict = key_info["result"]
-
-                assert key_info["readOnly"] == 0, f"Проверка на разрешение записи к апи ключу: {key_info}"
-                assert key_info["permissions"]["ContractTrade"] == ["Order", "Position"], \
-                    f"Нет разрешений на торговлю фьючерсами"
-
+                await _validate_bybit_keys(
+                    api_key=secrets.bybit_api_key,
+                    api_secret=secrets.bybit_api_secret)
                 await message.answer("✅ Ключи прошли проверку.")
     except Exception as e:
         return await message.answer(f"🛑 Произошла ошибка при проверке API ключей: {e}", parse_mode=None)
