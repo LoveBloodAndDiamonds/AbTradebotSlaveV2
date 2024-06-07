@@ -13,7 +13,7 @@ async def trade_command_handler(message: types.Message, command: CommandObject, 
         if license_key_expired_date < datetime.utcnow():
             raise Exception("Ваша подписка истекла.")
     except Exception as e:
-        return await message.answer(f"Произошла ошибка: {e}")
+        return await message.answer(f"🛑 Произошла ошибка: {e}")
 
     if not command.args:
         return await message.answer(
@@ -35,7 +35,7 @@ async def trade_command_handler(message: types.Message, command: CommandObject, 
             trades_count = None
         risk_usdt = float(risk_usdt.replace("$", "").strip())
     except Exception as e:
-        return await message.answer(f"Ошибка при парсинге введеного сообщения: {e}")
+        return await message.answer(f"🛑 Ошибка при парсинге введеного сообщения: {e}")
 
     try:
         await logic.add_user_strategy(
@@ -44,7 +44,7 @@ async def trade_command_handler(message: types.Message, command: CommandObject, 
             trades_count=int(trades_count) if trades_count else None
         )
     except Exception as e:
-        return await message.answer(f"Ошибка при запуске стратегии: {e}")
+        return await message.answer(f"🛑 Ошибка при запуске стратегии: {e}")
 
     return await message.answer(
-        f"Стратегия {strategy_name} с риском {risk_usdt}$ на {trades_count if trades_count else '∞'} сделок добавлена.")
+        f"✅ Стратегия {strategy_name} с риском {risk_usdt}$ на {trades_count if trades_count else '∞'} сделок добавлена.")

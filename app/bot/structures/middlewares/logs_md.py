@@ -23,12 +23,22 @@ class LogsMiddleware(BaseMiddleware):
             if isinstance(event, Message):
                 event_type = "Msg"
                 event_data = event.text
+
                 if event_data is None:
                     try:
                         if event.photo[-1]:
                             event_data = "<Photo>"
                     except Exception as e:
                         logger.debug(f"Can not recognize input file: {e}")
+
+                # Игнорируем логирование секретных данных
+                try:
+                    splitted_data = event_data.split(" ")
+                    if splitted_data[0] in ["/key_bybit", "/secret_bybit", "/key_binance", "/secret_binance"]:
+                        event_data = splitted_data[0] + " " + "*" * len(splitted_data[1])
+                except Exception as e:
+                    logger.error(f"Error while middleware logs: {e}")
+
             elif isinstance(event, CallbackQuery):
                 event_type = "Clbck"
                 event_data = event.data

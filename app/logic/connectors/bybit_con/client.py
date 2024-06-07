@@ -191,6 +191,9 @@ class AsyncClient(BaseClient):
     async def get_wallet_balance(self, **kwargs) -> dict:
         return await self._get("account/wallet-balance", **kwargs, signed=True)
 
+    async def get_api_key_information(self, **kwargs) -> dict:
+        return await self._get("user/query-api", **kwargs, signed=True)
+
     async def set_collateral_switch(self, **kwargs) -> dict:
         return await self._post("account/set-collateral-switch", **kwargs, signed=True)
 

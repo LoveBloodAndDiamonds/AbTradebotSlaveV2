@@ -29,7 +29,7 @@ def register_commands(dp: Dispatcher) -> None:
     dp.message.register(start_command_handler, Command("start"))
     dp.message.register(help_command_handler, Command("help"))
     dp.message.register(keys_command_handler, Command(
-        commands=["keys", "key_binance", "secret_binance", "key_bybit", "secret_bybit"]))
+        commands=["keys", "key_binance", "secret_binance", "key_bybit", "secret_bybit", "clear_keys"]))
     dp.message.register(license_command_handler, Command("license"))
     dp.message.register(trade_command_handler, Command("trade"))
     dp.message.register(stop_command_handler, Command("stop"))

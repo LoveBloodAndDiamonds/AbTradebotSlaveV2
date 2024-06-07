@@ -19,8 +19,8 @@ async def stop_command_handler(message: types.Message, command: CommandObject, l
     try:
         logic.remove_user_startegy(strategy_name=strategy_name, stop_all=strategy_name == "*")
     except Exception as e:
-        return await message.answer(f"Ошибка при остановке стратегии: {e}")
+        return await message.answer(f"🛑 Ошибка при остановке стратегии: {e}")
     if strategy_name == "*":
-        return await message.answer(f"Все стратегии остановлены.")
+        return await message.answer(f"✅ Все стратегии остановлены.")
     else:
-        return await message.answer(f"Стратегия {strategy_name} остановлена.")
+        return await message.answer(f"✅ Стратегия {strategy_name} остановлена.")

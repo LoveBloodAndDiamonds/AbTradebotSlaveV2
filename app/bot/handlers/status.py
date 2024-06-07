@@ -11,9 +11,10 @@ async def status_command_handler(message: types.Message, logic: Logic) -> types.
         text: str = "<b>Активные стратегии:</b>\n\n"
 
         for name, settings in active_strategies.items():
-            text += (f"{name}: Риск={settings.risk_usdt}$, сделок осталось: "
-                     f"{settings.trades_count if settings.trades_count else '∞'}\n")
+            text += (f"▫️ <b>{name}</b>:\n"
+                     f"Риск {settings.risk_usdt}$, осталось "
+                     f"{settings.trades_count if settings.trades_count else '∞'} сделок\n\n")
 
         return await message.answer(text)
     else:
-        return await message.answer("У Вас нет активных стратегий. Используйте команду /trade для запуска.")
+        return await message.answer("❕ У Вас нет активных стратегий. Используйте команду /trade для запуска.")
