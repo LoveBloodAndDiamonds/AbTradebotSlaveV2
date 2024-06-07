@@ -1,0 +1,15 @@
+[Unit]
+Description=Сервис клиентского приложения AbTradebot
+After=network.target
+
+[Service]
+User=root
+Group=root
+Type=simple
+WorkingDirectory=/root/AbTradebotSlaveV2
+ExecStartPre=git pull && pip3 install -r requirements.txt
+ExecStart=python3 -m src.app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
