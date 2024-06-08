@@ -26,7 +26,7 @@ ChangesAssociations=yes
 DisableProgramGroupPage=yes
 ; Remove the following line to run in administrative install mode (install for all users.)
 PrivilegesRequired=lowest
-OutputDir=C:\Users\user\Desktop\����� �����
+OutputDir=C:\Users\user\Desktop\
 OutputBaseFilename=AbTradebotInstaller
 SetupIconFile=C:\Users\user\Desktop\AbTradebotSlaveV2\static\setup_icon.ico
 Compression=lzma
