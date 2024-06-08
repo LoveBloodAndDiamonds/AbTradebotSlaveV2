@@ -4,8 +4,10 @@ from binance import Client
 
 from app.database import Database, SecretsORM
 from app.logic.connectors.bybit_con import AsyncClient
+from app.config import log_errors
 
 
+@log_errors
 async def _validate_binance_keys(api_key: str, api_secret: str) -> None:
     """
     Функция валидирует ключи с binance.com
@@ -16,6 +18,7 @@ async def _validate_binance_keys(api_key: str, api_secret: str) -> None:
     assert permissions["enableFutures"], "В настройках API ключа нужно разрешить торгволю фьючерсами."
 
 
+@log_errors
 async def _validate_bybit_keys(api_key: str, api_secret: str) -> None:
     """
     Функция валидирует ключи с bybit.com

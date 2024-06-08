@@ -7,7 +7,7 @@ import websockets
 
 from app.config import logger, log_args, VERSION, WS_RECONNECT_TIMEOUT, WS_WORKERS_COUNT
 from app.database import Database, SecretsORM
-from .connectors import EXCHANGES_CLASSES_FROM_ENUM
+from .connectors import EXCHANGES_CLASSES_FROM_ENUM, BinanceWarden, BybitWarden
 from .schemas import UserStrategySettings, Signal, Exchange
 from .utils import AlertWorker
 
@@ -44,8 +44,21 @@ class Logic:
         # Создаем задачи для рабочих
         workers = [asyncio.create_task(self._worker()) for _ in range(WS_WORKERS_COUNT)]
 
-        # Запускаем асихнронный сбор и обработку информации
-        await asyncio.gather(self._connect_to_master(), *workers)
+        # Создаем задачи для проверки стопов на позициях
+        wardens = [
+            asyncio.create_task(BinanceWarden(db=self._db).start_warden()),
+            asyncio.create_task(BybitWarden(db=self._db).start_warden())
+        ]
+
+        # Запускаем все что нам нужно для работы программы:
+        # - рабочие
+        # - вебсокет соединение с мастер сервером
+        # - проверка наличия стопов на позициях
+        await asyncio.gather(
+            self._connect_to_master(),
+            *wardens,
+            *workers
+        )
 
     @log_args
     async def get_license_key_expired_date(self) -> datetime:
