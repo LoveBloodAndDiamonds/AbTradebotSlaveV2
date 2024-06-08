@@ -38,6 +38,18 @@ class _Validator:
             raise ConnectionError(f"Ошибка при получении данных телеграм бота: {responce.text}")
 
     @staticmethod
+    def vaildate_admin_id(admin_id: str) -> None:
+        """
+        Базовая валидация введеного айди админа.
+        :param admin_id:
+        :return:
+        """
+        try:
+            int(admin_id)
+        except ValueError:
+            raise ValueError("Значение доложно быть числом.")
+
+    @staticmethod
     def valite_license_key(license_key: str) -> None:
         """
         Валидация ключа лицензии.
@@ -109,14 +121,22 @@ async def _cli_case(db: Database, secrets: SecretsORM) -> None:
     time.sleep(.05)  # Задержка, чтобы лог успел встать на нужное место
 
     # Ввод телеграм айди пользователя
-    if not secrets.admin_telegram_id:
-        telegram_id_input_text: str = "Введите Ваш телеграм айди.\n-> "
-    else:
-        telegram_id_input_text: str = (f"Введите Ваш телеграм айди\nВведите пустую строку, чтобы использовать "
-                                       f"'{secrets.admin_telegram_id}'\n -> ")
-    telegram_id_input: str = input(telegram_id_input_text)
-    telegram_id = secrets.admin_telegram_id if not telegram_id_input.strip() else telegram_id_input.strip()
-    logger.info("Если бот не будет отвечать на Ваши команды - проверьте телеграм айди.\n")
+    while True:
+        if not secrets.admin_telegram_id:
+            telegram_id_input_text: str = "Введите Ваш телеграм айди.\n-> "
+        else:
+            telegram_id_input_text: str = (f"Введите Ваш телеграм айди\nВведите пустую строку, чтобы использовать "
+                                           f"'{secrets.admin_telegram_id}'\n -> ")
+        telegram_id_input: str = input(telegram_id_input_text)
+        telegram_id = secrets.admin_telegram_id if not telegram_id_input.strip() else telegram_id_input.strip()
+
+        try:
+            _Validator.vaildate_admin_id(admin_id=telegram_id)
+            logger.success(
+                "Айди прошел провреку. Если бот не будет отвечать на Ваши команды - проверьте телеграм айди.\n")
+            break
+        except Exception as e:
+            logger.error(f"Ошибка при проверке телеграм айди: {e}")
     time.sleep(.05)  # Задержка, чтобы лог успел встать на нужное место
 
     # Ввод ключа лицензии
@@ -156,6 +176,7 @@ async def _from_json_case(db: Database, secrets: SecretsORM) -> None:
 
     _Validator.validate_bot_token(bot_token=secrets_json["bot_token"])
     _Validator.valite_license_key(license_key=secrets_json["license_key"])
+    _Validator.vaildate_admin_id(admin_id=secrets_json["telegram_admin_id"])
 
     secrets.bot_token = secrets_json["bot_token"]
     secrets.license_key = secrets_json["license_key"]
