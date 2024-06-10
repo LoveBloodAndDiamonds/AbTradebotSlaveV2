@@ -38,7 +38,7 @@
    ```
 3. Установите менеджер пакетов для python:
     ```shell
-    sudo apt install python-pip
+    sudo apt install python3-pip
     ```
 4. Скопируйте репозиторий или перенесите проект через SFTP в папку root/:
    ```shell
