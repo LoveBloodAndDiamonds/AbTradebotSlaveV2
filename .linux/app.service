@@ -7,7 +7,7 @@ User=root
 Group=root
 Type=simple
 WorkingDirectory=/root/AbTradebotSlaveV2
-ExecStartPre=git pull && pip3 install -r requirements.txt
+ExecStartPre=/bin/bash -c 'git pull && pip3 install -r requirements.txt'
 ExecStart=python3 -m app
 Restart=always
 
