@@ -51,7 +51,7 @@ async def trade_command_handler(message: types.Message, command: CommandObject, 
         return await message.answer(
             f"Чтобы запустить стратегию, нужно ввести команду формата:\n"
             "<blockquote>/trade {НазваниеСтратегии} {Риск}$ {КоличествоПозиций}</blockquote>\n\n"
-            f"Количество позиций можно не указывать, в таком случае - страетгия будет "
+            f"Количество позиций можно не указывать, в таком случае - стратегия будет "
             f"работать, пока Вы ее не остановите.\n\n"
             f"Например:\n"
             f"<blockquote>/trade btc1min 10$ 10</blockquote>\n\n"
