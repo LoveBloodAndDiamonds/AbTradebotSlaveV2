@@ -4,10 +4,13 @@ from typing import Optional
 from binance import AsyncClient
 from binance.enums import *
 
-from app.config import log_args, logger
-from app.logic.utils import AlertWorker
+from app import config
+from app.config import log_args, logger, log_errors
 from .exchange_info import exchange_info
+from .breakeven import BinanceBreakevenWebSocket
 from ..abstract import ABCExchange
+from ...utils import AlertWorker
+from ...schemas import BreakevenType, BreakevenTask
 
 
 class Binance(ABCExchange):
@@ -24,7 +27,8 @@ class Binance(ABCExchange):
         """
         self.binance = await AsyncClient.create(
             api_key=self._api_key,
-            api_secret=self._api_secret)
+            api_secret=self._api_secret,
+        )
 
     async def process_signal(self) -> bool:
         """
@@ -83,25 +87,69 @@ class Binance(ABCExchange):
                 )
             )
 
-            # if self._signal.breakeven:
-            #     _: dict | bool = await self._create_order(
-            #         self._create_order_kwargs(
-            #             type_=FUTURE_ORDER_TYPE_STOP,
-            #             close_position=True,
-            #             stop_price=self._signal.breakeven,  # activation price
-            #             price=float(market_order["avgPrice"])  # stop price,
-            #
-            #         )
-            #     )
-
-            # await AlertWorker.success(f"Открыты ордера по стратегии {self._signal.strategy}")
-
-            return True
-
         except Exception as e:
             logger.exception(f"Error while process signal: {e}")
             await AlertWorker.send(f"Ошибка при обработке сигнала: {e}")
             return False
+        else:
+            await BinanceBreakevenWebSocket(
+                task=BreakevenTask(
+                    ticker=self.symbol,
+                    stop_loss=self._signal.stop_loss,
+                    take_profit=self._signal.take_profit,
+                    plus_breakeven=self._signal.plus_breakeven,
+                    minus_breakeven=self._signal.minus_breakeven,
+                    callback=self._handle_breakeven_event,
+                    meta="binance breakeven task"
+                ),
+            ).run()
+
+            return True
+        finally:
+            await self.binance.close_connection()
+
+    @log_errors
+    async def _handle_breakeven_event(self, be_type: BreakevenType) -> None:
+        """
+        Функция ловит каллбек, когда BinanceBreakevenWebSocket находит момент, когда нужно переставить позицию
+        в безубыток.
+        :param be_type: Исходя из этого параметра понятно какой тип ордера выставлять.
+        :return:
+        """
+        await AlertWorker.warning(f"Пытаюсь переставить безубыток на стратегии {self._signal.strategy}")
+        position_info = await self.binance.futures_position_information(symbol=self.symbol)
+        position_amount: float = float(position_info[0]["positionAmt"])
+        if position_amount == 0:
+            return await AlertWorker.error(f"Позиция по {self._signal.strategy} уже закрыта.")
+
+        # Определяем стороны поизции и сторону для безубытка
+        position_side: str = SIDE_BUY if position_amount > 0 else SIDE_SELL
+        be_side: str = SIDE_BUY if position_side == SIDE_SELL else SIDE_SELL
+
+        # Считаем цену безубытка
+        if position_side == SIDE_SELL:
+            be_price: float = float(position_info[0]["entryPrice"]) * (1 - config.BREAKEVEN_STEP_PERCENT / 100)
+        elif position_side == SIDE_BUY:
+            be_price: float = float(position_info[0]["entryPrice"]) * (1 + config.BREAKEVEN_STEP_PERCENT / 100)
+
+        # Создаем kwargs для ордера
+        if be_type == BreakevenType.MINUS:
+            be_kwargs: dict = self._create_order_kwargs(
+                type_=FUTURE_ORDER_TYPE_TAKE_PROFIT_MARKET,
+                side=be_side,
+                stop_price=be_price,
+                close_position=True
+            )
+        elif be_type == BreakevenType.PLUS:
+            be_kwargs: dict = self._create_order_kwargs(
+                type_=FUTURE_ORDER_TYPE_STOP_MARKET,
+                side=be_side,
+                close_position=True,
+                stop_price=be_price
+            )
+
+        # Исполняем ордер
+        await self._create_order(be_kwargs)
 
     async def _is_available_to_open_position(self) -> bool:
         """
@@ -110,7 +158,7 @@ class Binance(ABCExchange):
         """
         position_info = await self.binance.futures_position_information(symbol=self.symbol)
         if float(position_info[0]["positionAmt"]) != 0:
-            logger.info(f"Позиция по {self.symbol} уже открыта.")
+            logger.info(f"Position on {self.symbol} already opened.")
             return False
         return True
 
@@ -185,7 +233,9 @@ class Binance(ABCExchange):
             raise ValueError("Wrong position side")
         self.quantity = self._user_strategy.risk_usdt / (percents_to_stop * self.last_price)
 
-    def _create_order_kwargs(self, type_: str, side: str,
+    def _create_order_kwargs(self,
+                             type_: str,
+                             side: str,
                              quantity: Optional[float] = 0,
                              reduce_only: Optional[bool] = False,
                              close_position: Optional[bool] = False,

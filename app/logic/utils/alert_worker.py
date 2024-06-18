@@ -6,8 +6,8 @@ from app.database import SecretsORM
 
 
 class AlertWorker:
-    BOT: Bot
-    ADMIN_ID: int
+    __BOT: Bot
+    __ADMIN_ID: int
 
     @classmethod
     def init(cls, secrets: SecretsORM) -> None:
@@ -17,11 +17,12 @@ class AlertWorker:
         :param secrets: Секретные данные пользователя
         :return:
         """
-        cls.BOT = Bot(
-            token=secrets.bot_token,
+        cls.__BOT_TOKEN: str = secrets.bot_token
+        cls.__BOT: Bot = Bot(
+            token=cls.__BOT_TOKEN,
             default=DefaultBotProperties(parse_mode="HTML", link_preview_is_disabled=True)
         )
-        cls.ADMIN_ID = secrets.admin_telegram_id
+        cls.__ADMIN_ID: int = secrets.admin_telegram_id
 
     @classmethod
     async def send(cls, message: str) -> None:
@@ -30,11 +31,14 @@ class AlertWorker:
         :param message: Текст, который нужно отправить.
         :return:
         """
-        await cls.BOT.send_message(
-            chat_id=cls.ADMIN_ID,
-            text=message
-        )
-        logger.debug(f"Alert {message} was sent")
+        try:
+            await cls.__BOT.send_message(
+                chat_id=cls.__ADMIN_ID,
+                text=message
+            )
+            logger.debug(f"Alert '{message}' was sent")
+        except Exception as e:
+            logger.error(f"Error while sending telegram alert: {e}")
 
     @classmethod
     async def success(cls, message: str) -> None:
@@ -47,3 +51,7 @@ class AlertWorker:
     @classmethod
     async def warning(cls, message: str) -> None:
         return await cls.send(f"⚠️ {message}")
+
+    @classmethod
+    async def info(cls, message: str) -> None:
+        return await cls.send(f"❕ {message}")

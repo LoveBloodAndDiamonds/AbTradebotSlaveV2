@@ -188,6 +188,9 @@ class AsyncClient(BaseClient):
     async def set_leverage(self, **kwargs) -> dict:
         return await self._post("position/set-leverage", **kwargs, signed=True)
 
+    async def set_position_trading_stop(self, **kwargs) -> dict:
+        return await self._post("position/trading-stop", **kwargs, signed=True)
+
     async def get_wallet_balance(self, **kwargs) -> dict:
         return await self._get("account/wallet-balance", **kwargs, signed=True)
 

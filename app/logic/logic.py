@@ -41,6 +41,37 @@ class Logic:
         Запуск логики соединения с мастер-вебсокетом.
         :return:
         """
+        # todo remove# todo remove# todo remove# todo remove# todo remove# todo remove# todo remove
+        # await asyncio.sleep(4)
+        # signal = Signal(
+        #     strategy="zxcghoul",
+        #     ticker="TRXUSDT",
+        #     exchange=Exchange.BYBIT,
+        #     take_profit=0.1155,
+        #     stop_loss=0.1145,
+        #     plus_breakeven=0.1152,
+        #     minus_breakeven=0.1148,
+        # )
+        #
+        # user_strategy = UserStrategySettings(
+        #     risk_usdt=0.5,
+        #     trades_count=1
+        # )
+        #
+        # api_key, api_secret = await self._get_keys_to_exchange(exchange=signal.exchange)
+        # exchange = EXCHANGES_CLASSES_FROM_ENUM[signal.exchange](
+        #     api_key=api_key,
+        #     api_secret=api_secret,
+        #     signal=signal,
+        #     user_strategy=user_strategy)
+        # is_success: bool = await exchange.process_signal()
+        #
+        # logger.success(is_success)
+        #
+        # while True:
+        #     await asyncio.sleep(10000)
+        # todo remove# todo remove# todo remove# todo remove# todo remove# todo remove# todo remove
+
         # Создаем задачи для рабочих
         workers = [asyncio.create_task(self._worker()) for _ in range(WS_WORKERS_COUNT)]
 
@@ -60,7 +91,6 @@ class Logic:
             *workers
         )
 
-    @log_args
     async def get_license_key_expired_date(self) -> datetime:
         """
         Функция получает время истечения подписки в формате timestamp и возвращает
@@ -74,7 +104,6 @@ class Logic:
                     raise Exception(result["error"])
                 return datetime.fromtimestamp(result["result"])
 
-    @log_args
     async def add_user_strategy(self, strategy_name: str, risk_usdt: float, trades_count: int | None) -> None:
         """
         Функция добавляет стратегию в словарь активных стратегий.
@@ -96,6 +125,8 @@ class Logic:
         self._active_strategies[strategy_name.lower()] = UserStrategySettings(
             risk_usdt=risk_usdt,
             trades_count=trades_count)
+
+        logger.info(f"Added <'{strategy_name}' {risk_usdt}$ {trades_count}> strategy")
 
     @log_args
     def remove_user_startegy(self, strategy_name: str = "", stop_all: bool = False) -> None:
@@ -149,6 +180,7 @@ class Logic:
                         logger.success(f"WS connected to: {url}")
                         while True:
                             msg_str: str = await ws.recv()
+                            logger.info(f"Got message: {msg_str}")
                             msg_dict: dict = json.loads(msg_str)
                             await self._queue.put(msg_dict)
                     except Exception as e:
@@ -199,7 +231,7 @@ class Logic:
 
                 # Убалвяем количество оставшихся сделок и информируем юзера
                 self._active_strategies[signal.strategy].trades_count -= 1
-                await AlertWorker.send(
+                await AlertWorker.info(
                     f"Осталось {self._active_strategies[signal.strategy].trades_count} сделок по {signal.strategy}.")
 
                 # Удаляем стратегию из активных, если в ней не осталось сделок

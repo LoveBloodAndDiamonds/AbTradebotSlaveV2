@@ -1,7 +1,10 @@
-from app.config import logger
+from app import config
+from app.config import logger, log_errors
+from .breakeven import BybitBreakevenWebSocket
 from .client import AsyncClient
 from .exchange_info import exchange_info
 from ..abstract import ABCExchange
+from ...schemas import BreakevenType, BreakevenTask
 from ...utils import AlertWorker
 
 
@@ -57,12 +60,72 @@ class Bybit(ABCExchange):
             # Открываем маркет ордер (байбит позволяет сразу указать стоп и тейк)
             await self._create_market_order()
 
-            return True
-
         except Exception as e:
             logger.exception(f"Error while process signal: {e}")
             await AlertWorker.send(f"Ошибка при обработке сигнала: {e}")
             return False
+
+        else:
+            await BybitBreakevenWebSocket(
+                task=BreakevenTask(
+                    ticker=self.symbol,
+                    stop_loss=self._signal.stop_loss,
+                    take_profit=self._signal.take_profit,
+                    plus_breakeven=self._signal.plus_breakeven,
+                    minus_breakeven=self._signal.minus_breakeven,
+                    callback=self._handle_breakeven_event
+                ),
+            ).run()
+
+            return True
+
+    @log_errors
+    async def _handle_breakeven_event(self, be_type: BreakevenType):
+        """
+        Функция ловит каллбек, когда BybitBreakevenWebSocket находит момент, когда нужно переставить позицию
+        в безубыток.
+        :param be_type: Исходя из этого параметра понятно какой тип ордера выставлять.
+        :return:
+        """
+        await AlertWorker.warning(f"Пытаюсь переставить безубыток на стратегии {self._signal.strategy}")
+        position_info: dict = await self.bybit.get_position_info(
+            category=self.category,
+            symbol=self.symbol)
+        one_way_position_info: dict = position_info["result"]["list"][0]
+        position_amount: float = float(one_way_position_info["size"])
+
+        if position_amount == 0:
+            return await AlertWorker.error(f"Позиция по {self._signal.strategy} уже закрыта.")
+
+        # Считаем цену безубытка
+        if one_way_position_info["side"] == "Sell":
+            be_price: float = float(one_way_position_info["avgPrice"]) * (1 - config.BREAKEVEN_STEP_PERCENT / 100)
+        elif one_way_position_info["side"] == "Buy":
+            be_price: float = float(one_way_position_info["avgPrice"]) * (1 + config.BREAKEVEN_STEP_PERCENT / 100)
+
+        # Создаем kwargs для ордера
+        if be_type == BreakevenType.MINUS:
+            params = dict(
+                category=self.category,
+                symbol=self.symbol,
+                takeProfit=str(exchange_info.round_price(self.symbol, be_price)),
+            )
+        elif be_type == BreakevenType.PLUS:
+            params = dict(
+                category=self.category,
+                symbol=self.symbol,
+                stopLoss=str(exchange_info.round_price(self.symbol, be_price)),
+            )
+
+        response: dict = await self.bybit.set_position_trading_stop(**params)
+
+        if response.get("retMsg") == "OK":
+            await AlertWorker.success(f"Открыт ордер по {self.symbol} для безубытка по цене {be_price}.")
+        else:
+            _: str = f"Error while creating order: {response}"
+            logger.error(_)
+            await AlertWorker.error(_)
+            raise ConnectionError(_)
 
     async def _define_ticker_last_price(self) -> None:
         """
@@ -108,7 +171,7 @@ class Bybit(ABCExchange):
         one_way_position_info: dict = position_info["result"]["list"][0]
 
         if float(one_way_position_info["size"]) != 0:
-            logger.info(f"Позиция по {self.symbol} уже открыта.")
+            logger.info(f"Position on {self.symbol} already opened.")
             return False
         return True
 

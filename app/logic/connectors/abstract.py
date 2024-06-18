@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 from threading import Thread
 
-from ..schemas import Signal, UserStrategySettings
-from ...database import SecretsORM, Database
+from ..schemas import Signal, UserStrategySettings, BreakevenTask, BreakevenType, Side
 
 
 class ABCExchange(ABC):
@@ -26,6 +25,12 @@ class ABCExchange(ABC):
 
     @abstractmethod
     async def process_signal(self) -> bool:
+        """ Функция обрабатывает полученный сигнал. """
+        pass
+
+    @abstractmethod
+    async def _handle_breakeven_event(self, be_type: BreakevenType):
+        """ Функция принимает каллбек для события, когда нужно переставить безубыток. """
         pass
 
 
@@ -124,3 +129,27 @@ class ABCPositionWarden(ABC):
     #     Функция возвращает все открытые позиции на аккаунте.
     #     Если их нет - возвращает пустой список.
     #     """
+
+
+class ABCBreakevenWebSocket(ABC):
+    """
+    Класс существует для определения момента, когда нужно переставить безубыток.
+    """
+    def __init__(self, task: BreakevenTask):
+        self._task: BreakevenTask = task
+
+    def task(self) -> BreakevenTask:
+        return self._task
+
+    @abstractmethod
+    async def run(self) -> None:
+        """ Функция запускает все процессы, которые нужны для отслеживания безубытка. """
+
+    def _define_side_by_task(self) -> Side | None:
+        """ Функция определяет сторону позиции в зависимости от стоимости тейк-профита и стоп-лосса """
+        if self._task.take_profit > self._task.stop_loss:
+            return Side.BUY
+        elif self._task.take_profit < self._task.stop_loss:
+            return Side.SELL
+        else:
+            return NotImplemented
