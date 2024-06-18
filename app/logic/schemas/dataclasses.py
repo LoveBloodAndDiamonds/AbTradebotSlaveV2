@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Awaitable, Self
+from typing import Callable, Awaitable
 
 from .enums import Exchange
 
@@ -21,7 +21,7 @@ class Signal:
         return as_dict
 
     @classmethod
-    def from_dict(cls, signal_dict: dict) -> Self:
+    def from_dict(cls, signal_dict: dict) -> "Signal":
         return cls(
             strategy=signal_dict["strategy"].lower(),
             ticker=signal_dict["ticker"],
