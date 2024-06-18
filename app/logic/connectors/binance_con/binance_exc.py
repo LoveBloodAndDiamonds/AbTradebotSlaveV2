@@ -116,40 +116,51 @@ class Binance(ABCExchange):
         :param be_type: Исходя из этого параметра понятно какой тип ордера выставлять.
         :return:
         """
-        await AlertWorker.warning(f"Пытаюсь переставить безубыток на стратегии {self._signal.strategy}")
-        position_info = await self.binance.futures_position_information(symbol=self.symbol)
-        position_amount: float = float(position_info[0]["positionAmt"])
-        if position_amount == 0:
-            return await AlertWorker.error(f"Позиция по {self._signal.strategy} уже закрыта.")
+        # Need to renew instance of client to avoid RuntimeError: Session is closed
+        self.binance = await AsyncClient.create(
+            api_key=self._api_key,
+            api_secret=self._api_secret
+        )
 
-        # Определяем стороны поизции и сторону для безубытка
-        position_side: str = SIDE_BUY if position_amount > 0 else SIDE_SELL
-        be_side: str = SIDE_BUY if position_side == SIDE_SELL else SIDE_SELL
+        try:
+            await AlertWorker.warning(f"Пытаюсь переставить безубыток на стратегии {self._signal.strategy}")
+            position_info = await self.binance.futures_position_information(symbol=self.symbol)
+            position_amount: float = float(position_info[0]["positionAmt"])
+            if position_amount == 0:
+                return await AlertWorker.error(f"Позиция по {self._signal.strategy} уже закрыта.")
 
-        # Считаем цену безубытка
-        if position_side == SIDE_SELL:
-            be_price: float = float(position_info[0]["entryPrice"]) * (1 - config.BREAKEVEN_STEP_PERCENT / 100)
-        elif position_side == SIDE_BUY:
-            be_price: float = float(position_info[0]["entryPrice"]) * (1 + config.BREAKEVEN_STEP_PERCENT / 100)
+            # Определяем стороны поизции и сторону для безубытка
+            position_side: str = SIDE_BUY if position_amount > 0 else SIDE_SELL
+            be_side: str = SIDE_BUY if position_side == SIDE_SELL else SIDE_SELL
 
-        # Создаем kwargs для ордера
-        if be_type == BreakevenType.MINUS:
-            be_kwargs: dict = self._create_order_kwargs(
-                type_=FUTURE_ORDER_TYPE_TAKE_PROFIT_MARKET,
-                side=be_side,
-                stop_price=be_price,
-                close_position=True
-            )
-        elif be_type == BreakevenType.PLUS:
-            be_kwargs: dict = self._create_order_kwargs(
-                type_=FUTURE_ORDER_TYPE_STOP_MARKET,
-                side=be_side,
-                close_position=True,
-                stop_price=be_price
-            )
+            # Считаем цену безубытка
+            if position_side == SIDE_SELL:
+                be_price: float = float(position_info[0]["entryPrice"]) * (1 - config.BREAKEVEN_STEP_PERCENT / 100)
+            elif position_side == SIDE_BUY:
+                be_price: float = float(position_info[0]["entryPrice"]) * (1 + config.BREAKEVEN_STEP_PERCENT / 100)
 
-        # Исполняем ордер
-        await self._create_order(be_kwargs)
+            # Создаем kwargs для ордера
+            if be_type == BreakevenType.MINUS:
+                be_kwargs: dict = self._create_order_kwargs(
+                    type_=FUTURE_ORDER_TYPE_TAKE_PROFIT_MARKET,
+                    side=be_side,
+                    stop_price=be_price,
+                    close_position=True
+                )
+            elif be_type == BreakevenType.PLUS:
+                be_kwargs: dict = self._create_order_kwargs(
+                    type_=FUTURE_ORDER_TYPE_STOP_MARKET,
+                    side=be_side,
+                    close_position=True,
+                    stop_price=be_price
+                )
+
+            # Исполняем ордер
+            await self._create_order(be_kwargs)
+        except Exception:
+            raise
+        finally:
+            await self.binance.close_connection()
 
     async def _is_available_to_open_position(self) -> bool:
         """
