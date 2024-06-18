@@ -38,7 +38,7 @@ class LogsMiddleware(BaseMiddleware):
             event_data = "Unknown"
             if isinstance(event, Message):
                 event_type = "Msg"
-                event_data = event.text
+                event_data = event.text.replace("\n", "<br>")
 
                 if event_data is None:
                     try:
