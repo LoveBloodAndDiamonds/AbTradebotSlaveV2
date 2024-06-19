@@ -241,7 +241,9 @@ class Logic:
             except json.decoder.JSONDecodeError:
                 logger.error(f"WS Error while decode msg: {msg}")
             except Exception as e:
-                logger.exception(f"WS Error in _worker func: {msg} : {e}")
+                _: str = f"WS Error in _worker func: {msg} : {e}"
+                logger.exception(_)
+                await AlertWorker.error(_)
             finally:
                 self._queue.task_done()
 
@@ -264,9 +266,13 @@ class Logic:
         """
         await self._update_secrets()
         if exchange == Exchange.BINANCE:
-            return self._secrets.binance_api_key, self._secrets.binance_api_secret
+            if self._secrets.binance_api_key and self._secrets.binance_api_secret:
+                return self._secrets.binance_api_key, self._secrets.binance_api_secret
+            raise ValueError("No keys on binance excange!")
         elif exchange == Exchange.BYBIT:
-            return self._secrets.bybit_api_key, self._secrets.bybit_api_secret
+            if self._secrets.bybit_api_key and self._secrets.bybit_api_secret:
+                return self._secrets.bybit_api_key, self._secrets.bybit_api_secret
+            raise ValueError("No keys on bybit excange!")
         else:
             raise ValueError("Wrong signal exchange")
 
