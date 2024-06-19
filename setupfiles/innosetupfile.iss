@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "AbTradebot"
-#define MyAppVersion "2.02"
+#define MyAppVersion "2.03"
 #define MyAppPublisher "Filipchuk's method"
 #define MyAppURL "https://t.me/filipchuka"
 #define MyAppExeName "__main__.exe"
