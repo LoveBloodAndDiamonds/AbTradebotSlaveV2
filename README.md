@@ -5,18 +5,12 @@
 
 
 ### Windows
-[Ссылка на установщик](portable/Windows/AbTradebotInstaller.exe)<br>
+[Ссылка на установщик](https://github.com/LoveBloodAndDiamonds/AbTradebotSlaveV2/releases)<br>
 
 Правила запуска:
-- [Синхронизация времени с сетью](portable/Windows/TimeSync.bat)
+- [Синхронизация времени с сетью](setupfiles/TimeSync.bat)
 - Скачивание установщика желательно через Egde или Mozilla
 - Запуск установщика и синхронизатора от имени администратора
-
-
----
-
-### MacOS
-(Пока недоступно)<br>
 
 ---
 
