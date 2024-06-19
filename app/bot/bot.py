@@ -28,8 +28,8 @@ async def start_bot() -> None:
     # Необязательная кастомизация имени бота
     try:
         await bot.set_my_name(f"Abcde Robot v{VERSION}")
-    except:  # noqa
-        pass
+    except Exception as e:  # noqa
+        logger.error(f"Can't rename bot: {e}")
 
     # Регистрируем команды
     register_commands(dp)
