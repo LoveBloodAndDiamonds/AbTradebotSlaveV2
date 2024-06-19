@@ -70,7 +70,7 @@ sudo systemctl status app
 
 ---
 
-### Compile Notes:
+### Compile notes:
 
 #### Windows:
 ```shell
