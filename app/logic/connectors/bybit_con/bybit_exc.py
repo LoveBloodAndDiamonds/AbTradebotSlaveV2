@@ -87,7 +87,8 @@ class Bybit(ABCExchange):
         :param be_type: Исходя из этого параметра понятно какой тип ордера выставлять.
         :return:
         """
-        await AlertWorker.warning(f"Пытаюсь переставить безубыток на стратегии {self._signal.strategy}")
+        await AlertWorker.warning(f"Пытаюсь переставить безубыток на стратегии {self._signal.strategy}. "
+                                  f"Дождитесь сообщения об успешном создании ордера.")
         position_info: dict = await self.bybit.get_position_info(
             category=self.category,
             symbol=self.symbol)

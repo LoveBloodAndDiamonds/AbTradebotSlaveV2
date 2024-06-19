@@ -123,7 +123,8 @@ class Binance(ABCExchange):
         )
 
         try:
-            await AlertWorker.warning(f"Пытаюсь переставить безубыток на стратегии {self._signal.strategy}")
+            await AlertWorker.warning(f"Пытаюсь переставить безубыток на стратегии {self._signal.strategy}. "
+                                      f"Дождитесь сообщения об успешном создании ордера.")
             position_info = await self.binance.futures_position_information(symbol=self.symbol)
             position_amount: float = float(position_info[0]["positionAmt"])
             if position_amount == 0:
