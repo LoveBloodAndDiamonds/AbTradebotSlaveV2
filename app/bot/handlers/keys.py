@@ -3,7 +3,8 @@ from aiogram.filters import CommandObject
 from binance import Client
 
 from app.database import Database, SecretsORM
-from app.logic.connectors.bybit_con import AsyncClient
+from app.logic.connectors.bybit_con import AsyncClient as BybitAsyncClient
+from app.logic.connectors.okx_conn import AsyncClient as OKXAsyncClient
 from app.config import log_errors
 
 
@@ -24,7 +25,7 @@ async def _validate_bybit_keys(api_key: str, api_secret: str) -> None:
     Функция валидирует ключи с bybit.com
     Ничего не возвращает, но рейзит ошибки, если с ключами что-то не так.
     """
-    client = await AsyncClient.create(api_key=api_key, api_secret=api_secret)
+    client = await BybitAsyncClient.create(api_key=api_key, api_secret=api_secret)
     key_info: dict = await client.get_api_key_information()
 
     if key_info["retCode"] != 0:
@@ -46,7 +47,13 @@ async def _validate_okx_keys(api_key: str, api_secret: str, api_pass: str) -> No
     Функция валидирует ключи с okx.com
     Ничего не возвращает, но рейзит ошибки, если с ключами что-то не так.
     """
-    # todo
+    client = OKXAsyncClient(api_key=api_key, secret_key=api_secret, passphrase=api_pass)
+
+    result: dict = await client.get_account_config()
+    data = result["data"][0]
+    permissions: list[str] = data["perm"].split(",")
+
+    assert "trade" in permissions, "На апи ключах нет разрешения для торговли"
 
 
 async def keys_command_handler(message: types.Message, command: CommandObject, db: Database) -> types.Message:
