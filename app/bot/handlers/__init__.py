@@ -2,6 +2,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.filters import Command
 from aiogram.types import BotCommand
 
+from .exchange import exchange_command_handler
 from .help import help_command_handler
 from .keys import keys_command_handler
 from .license import license_command_handler
@@ -16,7 +17,8 @@ bot_commands = (
     ("license", "Состояние лицензии"),
     ("trade", "Запуск стратегии"),
     ("stop", "Остановить стратегию(и)"),
-    ("keys", "Настройка API ключей")
+    ("keys", "Настройка API ключей"),
+    ("exchange", "Выбор биржи"),
 )
 
 
@@ -28,8 +30,12 @@ def register_commands(dp: Dispatcher) -> None:
     """
     dp.message.register(start_command_handler, Command("start"))
     dp.message.register(help_command_handler, Command("help"))
-    dp.message.register(keys_command_handler, Command(
-        commands=["keys", "key_binance", "secret_binance", "key_bybit", "secret_bybit", "clear_keys"]))
+    dp.message.register(keys_command_handler, Command(commands=[
+        "keys", "clear_keys",
+        "key_binance", "secret_binance",
+        "key_bybit", "secret_bybit",
+        "key_okx", "secret_okx"]))
+    dp.message.register(exchange_command_handler, Command("exchange"))
     dp.message.register(license_command_handler, Command("license"))
     dp.message.register(trade_command_handler, Command("trade"))
     dp.message.register(stop_command_handler, Command("stop"))

@@ -40,6 +40,15 @@ async def _validate_bybit_keys(api_key: str, api_secret: str) -> None:
         f"Нет разрешений на торговлю фьючерсами"
 
 
+@log_errors
+async def _validate_okx_keys(api_key: str, api_secret: str) -> None:
+    """
+    Функция валидирует ключи с bybit.com
+    Ничего не возвращает, но рейзит ошибки, если с ключами что-то не так.
+    """
+    # todo
+
+
 async def keys_command_handler(message: types.Message, command: CommandObject, db: Database) -> types.Message:
     """/keys command"""
     secrets: SecretsORM = await db.secrets_repo.get()
@@ -60,6 +69,8 @@ async def keys_command_handler(message: types.Message, command: CommandObject, d
                                     "<b>Доступные команды:</b>\n"
                                     "/key_binance\n"
                                     "/secret_binance\n"
+                                    "/key_okx\n"
+                                    "/secret_okx\n"
                                     "/key_bybit\n"
                                     "/secret_bybit\n\n"
                                     "<b>Удалить все ключи:</b>\n"
@@ -68,7 +79,10 @@ async def keys_command_handler(message: types.Message, command: CommandObject, d
                                     f"Binance Api Key:\n<tg-spoiler> {secrets.binance_api_key}</tg-spoiler>\n\n"
                                     f"Binance Api Secret:\n<tg-spoiler> {secrets.binance_api_secret}</tg-spoiler>\n\n"
                                     f"Bybit Api Key:\n<tg-spoiler> {secrets.bybit_api_key}</tg-spoiler>\n\n"
-                                    f"Bybit Api Secret:\n<tg-spoiler> {secrets.bybit_api_secret}</tg-spoiler>")
+                                    f"Bybit Api Secret:\n<tg-spoiler> {secrets.bybit_api_secret}</tg-spoiler>"
+                                    f"Okx Api Key:\n<tg-spoiler> {secrets.okx_api_key}</tg-spoiler>\n\n"
+                                    f"Okx Api Secret:\n<tg-spoiler> {secrets.okx_api_secret}</tg-spoiler>"
+                                    )
 
     match command.command:
         case "key_binance":
@@ -79,6 +93,10 @@ async def keys_command_handler(message: types.Message, command: CommandObject, d
             secrets.bybit_api_key = command.args.strip()
         case "secret_bybit":
             secrets.bybit_api_secret = command.args.strip()
+        case "key_okx":
+            secrets.okx_api_key = command.args.strip()
+        case "secret_okx":
+            secrets.okx_api_secret = command.args.strip()
 
     try:
         if command.command in ["key_binance", "secret_binance"]:
@@ -90,6 +108,12 @@ async def keys_command_handler(message: types.Message, command: CommandObject, d
         if command.command in ["key_bybit", "secret_bybit"]:
             if all([secrets.bybit_api_key, secrets.bybit_api_secret]):
                 await _validate_bybit_keys(
+                    api_key=secrets.bybit_api_key,
+                    api_secret=secrets.bybit_api_secret)
+                await message.answer("✅ Ключи прошли проверку.")
+        if command.command in ["key_okx", "secret_okx"]:
+            if all([secrets.bybit_api_key, secrets.bybit_api_secret]):
+                await _validate_okx_keys(
                     api_key=secrets.bybit_api_key,
                     api_secret=secrets.bybit_api_secret)
                 await message.answer("✅ Ключи прошли проверку.")

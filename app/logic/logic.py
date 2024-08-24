@@ -6,9 +6,9 @@ import aiohttp
 import websockets
 
 from app.config import logger, log_args, VERSION, WS_RECONNECT_TIMEOUT, WS_WORKERS_COUNT
-from app.database import Database, SecretsORM
+from app.database import Database, SecretsORM, Exchange
 from .connectors import EXCHANGES_CLASSES_FROM_ENUM, BinanceWarden, BybitWarden
-from .schemas import UserStrategySettings, Signal, Exchange
+from .schemas import UserStrategySettings, Signal
 from .utils import AlertWorker
 
 
@@ -217,8 +217,8 @@ class Logic:
                     logger.info(f"Process signal: {signal}")
 
                 # Запускаем стратегию
-                api_key, api_secret = await self._get_keys_to_exchange(exchange=signal.exchange)
-                exchange = EXCHANGES_CLASSES_FROM_ENUM[signal.exchange](
+                api_key, api_secret, exchange = await self._get_keys_and_exchange()
+                exchange = EXCHANGES_CLASSES_FROM_ENUM[exchange](
                     api_key=api_key,
                     api_secret=api_secret,
                     signal=signal,
@@ -259,22 +259,31 @@ class Logic:
                     raise Exception(result["error"])
                 return result["result"]
 
-    async def _get_keys_to_exchange(self, exchange: Exchange) -> tuple[str, str]:
+    async def _get_keys_and_exchange(self) -> tuple[str, str, Exchange]:
         """
         Функция возвращает ключи в соответствии с биржей сигнала
         :return:
         """
         await self._update_secrets()
-        if exchange == Exchange.BINANCE:
+
+        if self._secrets.exchange == Exchange.BINANCE:
             if self._secrets.binance_api_key and self._secrets.binance_api_secret:
-                return self._secrets.binance_api_key, self._secrets.binance_api_secret
+                return self._secrets.binance_api_key, self._secrets.binance_api_secret, self._secrets.exchange
             raise ValueError("No keys on binance excange!")
-        elif exchange == Exchange.BYBIT:
+
+        elif self._secrets.exchange == Exchange.BYBIT:
             if self._secrets.bybit_api_key and self._secrets.bybit_api_secret:
-                return self._secrets.bybit_api_key, self._secrets.bybit_api_secret
+                return self._secrets.bybit_api_key, self._secrets.bybit_api_secret, self._secrets.exchange
             raise ValueError("No keys on bybit excange!")
+
+        elif self._secrets.exchange == Exchange.OKX:
+            if self._secrets.okx_api_key and self._secrets.okx_api_secret:
+                return self._secrets.okx_api_key, self._secrets.okx_api_secret, self._secrets.exchange
+            raise ValueError("No keys on okx excange!")
+
         else:
-            raise ValueError("Wrong signal exchange")
+            raise ValueError("Exchange was not defined by user.")
+
 
 # self._active_strategies["test"] = UserStrategySettings(
 #     trades_count=10,

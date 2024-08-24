@@ -35,7 +35,7 @@ class BaseClient:
         self.base_url = self.base + self.API_VERSION + "/"
         self.session = httpx.AsyncClient(http2=True, base_url=self.base_url)
 
-    def _get_headers(self, timestamp_milli: int, signed=False, timeout: int = None) -> dict:
+    def _get_headers(self, timestamp_milli: int, signed=False) -> dict:
         headers = {
             "X-BAPI-TIMESTAMP": str(timestamp_milli),
             "X-BAPI-RECV-WINDOW": str(self.receive_window),

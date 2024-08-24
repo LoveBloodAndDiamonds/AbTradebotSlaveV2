@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Callable, Awaitable
 
-from .enums import Exchange
+from app.database import Exchange
 
 
 @dataclass
