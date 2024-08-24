@@ -41,9 +41,9 @@ async def _validate_bybit_keys(api_key: str, api_secret: str) -> None:
 
 
 @log_errors
-async def _validate_okx_keys(api_key: str, api_secret: str) -> None:
+async def _validate_okx_keys(api_key: str, api_secret: str, api_pass: str) -> None:
     """
-    Функция валидирует ключи с bybit.com
+    Функция валидирует ключи с okx.com
     Ничего не возвращает, но рейзит ошибки, если с ключами что-то не так.
     """
     # todo
@@ -59,6 +59,9 @@ async def keys_command_handler(message: types.Message, command: CommandObject, d
         secrets.binance_api_secret = None
         secrets.bybit_api_key = None
         secrets.bybit_api_secret = None
+        secrets.okx_api_key = None
+        secrets.okx_api_secret = None
+        secrets.okx_api_pass = None
         await db.secrets_repo.update(secrets)
         return await message.answer("✅ Ключи успешно удалены")
 
@@ -71,17 +74,19 @@ async def keys_command_handler(message: types.Message, command: CommandObject, d
                                     "/secret_binance\n"
                                     "/key_okx\n"
                                     "/secret_okx\n"
+                                    "/pass_okx\n"
                                     "/key_bybit\n"
                                     "/secret_bybit\n\n"
                                     "<b>Удалить все ключи:</b>\n"
                                     "/clear_keys\n\n"
                                     "<b>Введеные ключи:</b>\n"
-                                    f"Binance Api Key:\n<tg-spoiler> {secrets.binance_api_key}</tg-spoiler>\n\n"
+                                    f"Binance Api Key:\n<tg-spoiler> {secrets.binance_api_key}</tg-spoiler>\n"
                                     f"Binance Api Secret:\n<tg-spoiler> {secrets.binance_api_secret}</tg-spoiler>\n\n"
-                                    f"Bybit Api Key:\n<tg-spoiler> {secrets.bybit_api_key}</tg-spoiler>\n\n"
-                                    f"Bybit Api Secret:\n<tg-spoiler> {secrets.bybit_api_secret}</tg-spoiler>"
-                                    f"Okx Api Key:\n<tg-spoiler> {secrets.okx_api_key}</tg-spoiler>\n\n"
-                                    f"Okx Api Secret:\n<tg-spoiler> {secrets.okx_api_secret}</tg-spoiler>"
+                                    f"Bybit Api Key:\n<tg-spoiler> {secrets.bybit_api_key}</tg-spoiler>\n"
+                                    f"Bybit Api Secret:\n<tg-spoiler> {secrets.bybit_api_secret}</tg-spoiler>\n\n"
+                                    f"Okx Api Key:\n<tg-spoiler> {secrets.okx_api_key}</tg-spoiler>\n"
+                                    f"Okx Api Secret:\n<tg-spoiler> {secrets.okx_api_secret}</tg-spoiler>\n"
+                                    f"Okx Api Pass:\n<tg-spoiler> {secrets.okx_api_pass}</tg-spoiler>\n\n"
                                     )
 
     match command.command:
@@ -97,6 +102,8 @@ async def keys_command_handler(message: types.Message, command: CommandObject, d
             secrets.okx_api_key = command.args.strip()
         case "secret_okx":
             secrets.okx_api_secret = command.args.strip()
+        case "pass_okx":
+            secrets.okx_api_pass = command.args.strip()
 
     try:
         if command.command in ["key_binance", "secret_binance"]:
@@ -104,21 +111,25 @@ async def keys_command_handler(message: types.Message, command: CommandObject, d
                 await _validate_binance_keys(
                     api_key=secrets.binance_api_key,
                     api_secret=secrets.binance_api_secret)
-                await message.answer("✅ Ключи прошли проверку.")
+                await db.secrets_repo.update(secrets)
+                return await message.answer("✅ Ключи прошли проверку.")
         if command.command in ["key_bybit", "secret_bybit"]:
             if all([secrets.bybit_api_key, secrets.bybit_api_secret]):
                 await _validate_bybit_keys(
                     api_key=secrets.bybit_api_key,
                     api_secret=secrets.bybit_api_secret)
-                await message.answer("✅ Ключи прошли проверку.")
-        if command.command in ["key_okx", "secret_okx"]:
-            if all([secrets.bybit_api_key, secrets.bybit_api_secret]):
+                await db.secrets_repo.update(secrets)
+                return await message.answer("✅ Ключи прошли проверку.")
+        if command.command in ["key_okx", "secret_okx", "pass_okx"]:
+            if all([secrets.okx_api_key, secrets.okx_api_secret, secrets.okx_api_pass]):
                 await _validate_okx_keys(
-                    api_key=secrets.bybit_api_key,
-                    api_secret=secrets.bybit_api_secret)
-                await message.answer("✅ Ключи прошли проверку.")
+                    api_key=secrets.okx_api_key,
+                    api_secret=secrets.okx_api_secret,
+                    api_pass=secrets.okx_api_pass)
+                await db.secrets_repo.update(secrets)
+                return await message.answer("✅ Ключи прошли проверку.")
     except Exception as e:
         return await message.answer(f"🛑 Произошла ошибка при проверке API ключей: {e}", parse_mode=None)
 
-    await db.secrets_repo.update(secrets)
-    return await message.answer("✅ Ключ обновлен. После введения второго ключа происходит их проверка.")
+    return await message.answer(
+        "✅ Ключ обновлен. После введения второго (или третьего, в случае с OKX) ключа происходит их проверка.")

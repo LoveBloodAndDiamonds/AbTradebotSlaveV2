@@ -34,7 +34,7 @@ def register_commands(dp: Dispatcher) -> None:
         "keys", "clear_keys",
         "key_binance", "secret_binance",
         "key_bybit", "secret_bybit",
-        "key_okx", "secret_okx"]))
+        "key_okx", "secret_okx", "pass_okx"]))
     dp.message.register(exchange_command_handler, Command("exchange"))
     dp.message.register(license_command_handler, Command("license"))
     dp.message.register(trade_command_handler, Command("trade"))

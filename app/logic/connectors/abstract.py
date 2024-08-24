@@ -11,10 +11,12 @@ class ABCExchange(ABC):
             signal: Signal,
             user_strategy: UserStrategySettings,
             api_key: str,
-            api_secret: str
+            api_secret: str,
+            api_pass: str | None
     ) -> None:
         self._api_key = api_key
         self._api_secret = api_secret
+        self._api_pass = api_pass
         self._signal = signal
         self._user_strategy = user_strategy
 

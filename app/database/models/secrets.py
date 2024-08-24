@@ -36,3 +36,4 @@ class SecretsORM(Base):
     # Апи ключи с okx
     okx_api_key: Mapped[str] = mapped_column(nullable=True)
     okx_api_secret: Mapped[str] = mapped_column(nullable=True)
+    okx_api_pass: Mapped[str] = mapped_column(nullable=True)

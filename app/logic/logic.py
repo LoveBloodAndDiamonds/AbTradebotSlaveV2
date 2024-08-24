@@ -7,7 +7,7 @@ import websockets
 
 from app.config import logger, log_args, VERSION, WS_RECONNECT_TIMEOUT, WS_WORKERS_COUNT
 from app.database import Database, SecretsORM, Exchange
-from .connectors import EXCHANGES_CLASSES_FROM_ENUM, BinanceWarden, BybitWarden
+from .connectors import EXCHANGES_CLASSES_FROM_ENUM, BinanceWarden, BybitWarden, ABCExchange
 from .schemas import UserStrategySettings, Signal
 from .utils import AlertWorker
 
@@ -217,13 +217,14 @@ class Logic:
                     logger.info(f"Process signal: {signal}")
 
                 # Запускаем стратегию
-                api_key, api_secret, exchange = await self._get_keys_and_exchange()
-                exchange = EXCHANGES_CLASSES_FROM_ENUM[exchange](
+                api_key, api_secret, api_pass, exchange = await self._get_keys_and_exchange()
+                exchange_obj: ABCExchange = EXCHANGES_CLASSES_FROM_ENUM[exchange](
                     api_key=api_key,
                     api_secret=api_secret,
+                    api_pass=api_pass,
                     signal=signal,
                     user_strategy=self._active_strategies[signal.strategy])
-                is_success: bool = await exchange.process_signal()
+                is_success: bool = await exchange_obj.process_signal()
 
                 # Проверяем количество оставшихся сигналов, если сигнал успешно обработан
                 if not is_success or self._active_strategies[signal.strategy] is None:
@@ -259,7 +260,7 @@ class Logic:
                     raise Exception(result["error"])
                 return result["result"]
 
-    async def _get_keys_and_exchange(self) -> tuple[str, str, Exchange]:
+    async def _get_keys_and_exchange(self) -> tuple[str, str, str | None, Exchange]:
         """
         Функция возвращает ключи в соответствии с биржей сигнала
         :return:
@@ -268,17 +269,18 @@ class Logic:
 
         if self._secrets.exchange == Exchange.BINANCE:
             if self._secrets.binance_api_key and self._secrets.binance_api_secret:
-                return self._secrets.binance_api_key, self._secrets.binance_api_secret, self._secrets.exchange
+                return self._secrets.binance_api_key, self._secrets.binance_api_secret, None, self._secrets.exchange
             raise ValueError("No keys on binance excange!")
 
         elif self._secrets.exchange == Exchange.BYBIT:
             if self._secrets.bybit_api_key and self._secrets.bybit_api_secret:
-                return self._secrets.bybit_api_key, self._secrets.bybit_api_secret, self._secrets.exchange
+                return self._secrets.bybit_api_key, self._secrets.bybit_api_secret, None, self._secrets.exchange
             raise ValueError("No keys on bybit excange!")
 
         elif self._secrets.exchange == Exchange.OKX:
             if self._secrets.okx_api_key and self._secrets.okx_api_secret:
-                return self._secrets.okx_api_key, self._secrets.okx_api_secret, self._secrets.exchange
+                return self._secrets.okx_api_key, self._secrets.okx_api_secret, self._secrets.okx_api_pass, \
+                    self._secrets.exchange
             raise ValueError("No keys on okx excange!")
 
         else:
