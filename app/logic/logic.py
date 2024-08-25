@@ -7,7 +7,7 @@ import websockets
 
 from app.config import logger, log_args, VERSION, WS_RECONNECT_TIMEOUT, WS_WORKERS_COUNT
 from app.database import Database, SecretsORM, Exchange
-from .connectors import EXCHANGES_CLASSES_FROM_ENUM, BinanceWarden, BybitWarden, ABCExchange
+from .connectors import EXCHANGES_CLASSES_FROM_ENUM, BinanceWarden, BybitWarden, ABCExchange, OKXWarden
 from .schemas import UserStrategySettings, Signal
 from .utils import AlertWorker
 
@@ -43,33 +43,34 @@ class Logic:
         """
         # todo remove# todo remove# todo remove# todo remove# todo remove# todo remove# todo remove
         # await asyncio.sleep(4)
-        # signal = Signal(
-        #     strategy="zxcghoul",
-        #     ticker="TRXUSDT",
-        #     exchange=Exchange.BYBIT,
-        #     take_profit=0.1155,
-        #     stop_loss=0.1145,
-        #     plus_breakeven=0.1152,
-        #     minus_breakeven=0.1148,
-        # )
+        signal = Signal(
+            strategy="zxcghoul",
+            ticker="MATICUSDT",
+            exchange=Exchange.OKX,
+            take_profit=0.54,
+            stop_loss=0.51,
+            plus_breakeven=0.1152,
+            minus_breakeven=0.1148,
+        )
+
+        user_strategy = UserStrategySettings(
+            risk_usdt=0.5,
+            trades_count=1
+        )
         #
-        # user_strategy = UserStrategySettings(
-        #     risk_usdt=0.5,
-        #     trades_count=1
-        # )
-        #
-        # api_key, api_secret = await self._get_keys_to_exchange(exchange=signal.exchange)
-        # exchange = EXCHANGES_CLASSES_FROM_ENUM[signal.exchange](
-        #     api_key=api_key,
-        #     api_secret=api_secret,
-        #     signal=signal,
-        #     user_strategy=user_strategy)
-        # is_success: bool = await exchange.process_signal()
-        #
-        # logger.success(is_success)
-        #
-        # while True:
-        #     await asyncio.sleep(10000)
+        api_key, api_secret, passkey, exchange = await self._get_keys_and_exchange()
+        exchange = EXCHANGES_CLASSES_FROM_ENUM[exchange](
+            api_key=api_key,
+            api_secret=api_secret,
+            api_pass=passkey,
+            signal=signal,
+            user_strategy=user_strategy)
+        is_success: bool = await exchange.process_signal()
+
+        logger.success(is_success)
+
+        while True:
+            await asyncio.sleep(10000)
         # todo remove# todo remove# todo remove# todo remove# todo remove# todo remove# todo remove
 
         # Создаем задачи для рабочих
@@ -78,7 +79,8 @@ class Logic:
         # Создаем задачи для проверки стопов на позициях
         wardens = [
             asyncio.create_task(BinanceWarden(db=self._db).start_warden()),
-            asyncio.create_task(BybitWarden(db=self._db).start_warden())
+            asyncio.create_task(BybitWarden(db=self._db).start_warden()),
+            asyncio.create_task(OKXWarden(db=self._db).start_warden())
         ]
 
         # Запускаем все что нам нужно для работы программы:
@@ -285,7 +287,6 @@ class Logic:
 
         else:
             raise ValueError("Exchange was not defined by user.")
-
 
 # self._active_strategies["test"] = UserStrategySettings(
 #     trades_count=10,

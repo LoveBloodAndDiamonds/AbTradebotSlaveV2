@@ -4,7 +4,7 @@ from binance import Client
 
 from app.database import Database, SecretsORM
 from app.logic.connectors.bybit_con import AsyncClient as BybitAsyncClient
-from app.logic.connectors.okx_conn import AsyncClient as OKXAsyncClient
+from app.logic.connectors.okx_con import AsyncClient as OKXAsyncClient
 from app.config import log_errors
 
 

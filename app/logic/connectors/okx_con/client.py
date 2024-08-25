@@ -119,11 +119,53 @@ class AsyncClient(BaseClient):
     def __init__(self, api_key: str, secret_key: str, passphrase: str) -> None:
         super().__init__(api_key, secret_key, passphrase)
 
-    async def _post(self, request_path: str, body: Optional[dict] = None) -> Optional[Dict[str, Any]]:
+    async def _post(self, request_path: str, body: Optional[dict] | str = None) -> Optional[Dict[str, Any]]:
         return await self.make_request("POST", request_path, body)
 
-    async def _get(self, request_path: str, body: Optional[dict] = None) -> Optional[Dict[str, Any]]:
+    async def _get(self, request_path: str, body: Optional[dict] | str = None) -> Optional[Dict[str, Any]]:
         return await self.make_request("GET", request_path, body)
 
     async def get_account_config(self):
         return await self._get("/api/v5/account/config")
+
+    async def cancel_all_open_orders(
+            self,
+            instId: str,  # noqa
+            ordId: Optional[str] = None,  # noqa
+            clOrdId: Optional[str] = None  # noqa
+    ) -> Optional[Dict[str, Any]]:
+        """
+        https://www.okx.com/docs-v5/en/#order-book-trading-trade-post-cancel-multiple-orders
+        :param instId:
+        :param ordId:
+        :param clOrdId:
+        :return:
+        """
+        orders: dict = await self.get_open_orders(instId=instId)
+        orders: list[dict] = [o for o in orders["data"]]
+        if orders:
+            ids: list[str] = [o["ordId"] for o in orders]
+            orders_with_ids: list[dict] = [{"instId": instId, "ordId": _id} for _id in ids]
+            orders_with_ids: str = json.dumps(orders_with_ids)
+
+            return await self._post("/api/v5/trade/cancel-batch-orders", body=orders_with_ids)
+        else:
+            return {}
+
+    async def get_open_positions(self, instId: str) -> Optional[Dict[str, Any]]:  # noqa
+        return await self._get("/api/v5/account/positions", body={"instId": instId})
+
+    async def get_last_price(self, instId: str) -> Optional[Dict[str, Any]]:  # noqa
+        return await self._get("/api/v5/market/ticker", body={"instId": instId})
+
+    async def get_open_orders(self, instId: str) -> Optional[Dict[str, Any]]:  # noqa
+        """
+        Получает все открытые ордера для заданного инструмента.
+
+        :param instId: ID инструмента, например 'BTC-USDT-SWAP'
+        :return: Словарь с информацией о открытых ордерах или None, если ордера отсутствуют.
+        """
+        return await self._get("/api/v5/trade/orders-pending", body={"instId": instId})
+
+    async def place_order(self, body: dict[str, Any]) -> Optional[Dict[str, Any]]:
+        return await self._post("/api/v5/trade/order", body=json.dumps(body))

@@ -8,4 +8,8 @@ class OKXWarden(ABCPositionWarden):
         self._db = db
 
     def start_warden(self) -> None:
+        """
+        Функция запускает бесконечный цикл, в котором проверяются открытые позиции без стопов.
+        :return:
+        """
         pass  # todo
