@@ -6,7 +6,7 @@
 WS_RECONNECT_TIMEOUT: float = 20
 
 # Количество рабочих, обрабатывающих сообщение с вебсокета
-WS_WORKERS_COUNT: int = 3
+WS_WORKERS_COUNT: int = 1
 
 # Таймаут для проверки открытых позиций без стопа в секудах
 WARDEN_TIMEOUT: int = 60

@@ -41,36 +41,51 @@ class Logic:
         Запуск логики соединения с мастер-вебсокетом.
         :return:
         """
-        # todo remove# todo remove# todo remove# todo remove# todo remove# todo remove# todo remove
-        # await asyncio.sleep(4)
-        signal = Signal(
-            strategy="zxcghoul",
-            ticker="MATICUSDT",
-            exchange=Exchange.OKX,
-            take_profit=0.54,
-            stop_loss=0.51,
-            plus_breakeven=0.1152,
-            minus_breakeven=0.1148,
-        )
-
-        user_strategy = UserStrategySettings(
-            risk_usdt=0.5,
-            trades_count=1
-        )
-        #
-        api_key, api_secret, passkey, exchange = await self._get_keys_and_exchange()
-        exchange = EXCHANGES_CLASSES_FROM_ENUM[exchange](
-            api_key=api_key,
-            api_secret=api_secret,
-            api_pass=passkey,
-            signal=signal,
-            user_strategy=user_strategy)
-        is_success: bool = await exchange.process_signal()
-
-        logger.success(is_success)
-
+        # todo remove# todo remove# todo remove# todo remove# todo remove
+        from app.logic.connectors.okx_con.breakeven import BreakevenTask, OKXBreakevenWebSocket
+        await OKXBreakevenWebSocket(BreakevenTask(
+            ticker="MATIC-USDT-SWAP",
+            take_profit=0.52,
+            stop_loss=0.48,
+            plus_breakeven=0.51,
+            minus_breakeven=0.49,
+            callback=None,
+            meta="test",
+        )).run()
         while True:
             await asyncio.sleep(10000)
+        # todo remove# todo remove# todo remove# todo remove# todo remove
+
+        # todo remove# todo remove# todo remove# todo remove# todo remove# todo remove# todo remove
+        # await asyncio.sleep(4)
+        # signal = Signal(
+        #     strategy="zxcghoul",
+        #     ticker="MATICUSDT",
+        #     exchange=Exchange.OKX,
+        #     take_profit=0.51,
+        #     stop_loss=0.49,
+        #     plus_breakeven=0.1152,
+        #     minus_breakeven=0.1148,
+        # )
+        #
+        # user_strategy = UserStrategySettings(
+        #     risk_usdt=0.5,
+        #     trades_count=1
+        # )
+        # #
+        # api_key, api_secret, passkey, exchange = await self._get_keys_and_exchange()
+        # exchange = EXCHANGES_CLASSES_FROM_ENUM[exchange](
+        #     api_key=api_key,
+        #     api_secret=api_secret,
+        #     api_pass=passkey,
+        #     signal=signal,
+        #     user_strategy=user_strategy)
+        # is_success: bool = await exchange.process_signal()
+        #
+        # logger.success(is_success)
+        #
+        # while True:
+        #     await asyncio.sleep(10000)
         # todo remove# todo remove# todo remove# todo remove# todo remove# todo remove# todo remove
 
         # Создаем задачи для рабочих

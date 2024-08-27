@@ -140,7 +140,8 @@ class OKX(ABCExchange):
             ordType="market",
             side=self.side,
             tdMode="cross",
-            sz=exchange_info.round_quantity(symbol=self.symbol, quantity=self.quantity),
+            posSide="net",
+            sz=abs(exchange_info.round_quantity(symbol=self.symbol, quantity=self.quantity)),
             attachAlgoOrds=[
                 dict(
                     tpOrdKind="condition",

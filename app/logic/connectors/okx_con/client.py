@@ -141,7 +141,7 @@ class AsyncClient(BaseClient):
         :param clOrdId:
         :return:
         """
-        orders: dict = await self.get_open_orders(instId=instId)
+        orders: dict = await self.get_open_orders(dict(instId=instId))
         orders: list[dict] = [o for o in orders["data"]]
         if orders:
             ids: list[str] = [o["ordId"] for o in orders]
@@ -152,20 +152,38 @@ class AsyncClient(BaseClient):
         else:
             return {}
 
-    async def get_open_positions(self, instId: str) -> Optional[Dict[str, Any]]:  # noqa
-        return await self._get("/api/v5/account/positions", body={"instId": instId})
+    async def get_open_positions(self, instId: str = None, instType: Literal["SWAP"] = None) -> Optional[Dict[str, Any]]:  # noqa
+        body = {}
+        if instId:
+            body["instId"] = instId
+        if instType:
+            body["instType"] = instType
+        return await self._get("/api/v5/account/positions", body=body)
 
-    async def get_last_price(self, instId: str) -> Optional[Dict[str, Any]]:  # noqa
+    async def get_account_positions_risk(self, instType: Literal["SWAP"]) -> Optional[Dict[str, Any]]:  # noqa
+        return await self._get("/api/v5/account/account-position-risk", body={"instType": instType})
+
+    async def get_last_price(self, instId: str = None) -> Optional[Dict[str, Any]]:  # noqa
         return await self._get("/api/v5/market/ticker", body={"instId": instId})
 
-    async def get_open_orders(self, instId: str) -> Optional[Dict[str, Any]]:  # noqa
+    async def get_open_orders(self, body: dict) -> Optional[Dict[str, Any]]:  # noqa
         """
         Получает все открытые ордера для заданного инструмента.
 
-        :param instId: ID инструмента, например 'BTC-USDT-SWAP'
         :return: Словарь с информацией о открытых ордерах или None, если ордера отсутствуют.
         """
-        return await self._get("/api/v5/trade/orders-pending", body={"instId": instId})
+        return await self._get("/api/v5/trade/orders-pending", body=body)
 
     async def place_order(self, body: dict[str, Any]) -> Optional[Dict[str, Any]]:
         return await self._post("/api/v5/trade/order", body=json.dumps(body))
+
+    async def get_open_algo_orders(self, ordType: str = "conditional") -> Optional[Dict[str, Any]]:  # noqa
+        """
+        Получает все открытые АЛГО ордера.
+        :param ordType:
+        :return:
+        """
+        return await self._get("/api/v5/trade/orders-algo-pending", body=dict(ordType=ordType))
+
+    async def close_position(self, body: dict) -> Optional[Dict[str, Any]]:
+        return await self._post("/api/v5/trade/close-position", body=body)

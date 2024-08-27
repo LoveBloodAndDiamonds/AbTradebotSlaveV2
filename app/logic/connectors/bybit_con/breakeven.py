@@ -96,48 +96,53 @@ class BybitBreakevenWebSocket(ABCBreakevenWebSocket):
         """
 
         while self.__in_progress:
-            msg: dict = await self.__queue.get()
-            if not msg.get("topic"):
-                continue
+            try:
+                msg: dict = await self.__queue.get()
+                if not msg.get("topic"):
+                    continue
 
-            kline: dict = msg["data"][0]
-            for v in self.__sorter.get_new_values(
-                    candle=Candle(
-                        open_time=kline["start"],
-                        is_closed=kline["confirm"],
-                        high=float(kline["high"]),
-                        low=float(kline["low"]),
-                        close=float(kline["close"]),
-                        open=float(kline["open"]),
-                        volume=float(kline["volume"])
-                    )
-            ):
+                kline: dict = msg["data"][0]
+                for v in self.__sorter.get_new_values(
+                        candle=Candle(
+                            open_time=kline["start"],
+                            is_closed=kline["confirm"],
+                            high=float(kline["high"]),
+                            low=float(kline["low"]),
+                            close=float(kline["close"]),
+                            open=float(kline["open"]),
+                            volume=float(kline["volume"])
+                        )
+                ):
 
-                async def _at_find_breakeven(be_type: BreakevenType):
-                    logger.info(f"Detected {be_type} on kline: {kline}")
-                    self._stop()
-                    await self._task.callback(be_type)
-
-                if self.__side == Side.BUY:
-                    if v >= self._task.plus_breakeven:
-                        return await _at_find_breakeven(BreakevenType.PLUS)
-                    elif v <= self._task.minus_breakeven:
-                        return await _at_find_breakeven(BreakevenType.MINUS)
-                    elif not self._task.stop_loss <= v <= self._task.take_profit:
+                    async def _at_find_breakeven(be_type: BreakevenType):
+                        logger.info(f"Detected {be_type} on kline: {kline}")
                         self._stop()
-                        logger.error(f"Error on {self._task.__dict__}: Breakven not detected but already take or stop!")
+                        await self._task.callback(be_type)
 
-                elif self.__side == Side.SELL:
-                    if self._task.plus_breakeven >= v:
-                        return await _at_find_breakeven(BreakevenType.PLUS)
-                    elif self._task.minus_breakeven <= v:
-                        return await _at_find_breakeven(BreakevenType.MINUS)
-                    elif not self._task.stop_loss >= v >= self._task.take_profit:
-                        self._stop()
-                        logger.error(f"Error on {self._task.__dict__}: Breakven not detected but already take or stop!")
+                    if self.__side == Side.BUY:
+                        if v >= self._task.plus_breakeven:
+                            return await _at_find_breakeven(BreakevenType.PLUS)
+                        elif v <= self._task.minus_breakeven:
+                            return await _at_find_breakeven(BreakevenType.MINUS)
+                        elif not self._task.stop_loss <= v <= self._task.take_profit:
+                            self._stop()
+                            logger.error(f"Error on {self._task.__dict__}: "
+                                         f"Breakven not detected but already take or stop!")
 
-                else:
-                    raise ValueError(f"Wrong side to task: {self._task.__dict__}: {self.__side}")
+                    elif self.__side == Side.SELL:
+                        if self._task.plus_breakeven >= v:
+                            return await _at_find_breakeven(BreakevenType.PLUS)
+                        elif self._task.minus_breakeven <= v:
+                            return await _at_find_breakeven(BreakevenType.MINUS)
+                        elif not self._task.stop_loss >= v >= self._task.take_profit:
+                            self._stop()
+                            logger.error(f"Error on {self._task.__dict__}: "
+                                         f"Breakven not detected but already take or stop!")
+
+                    else:
+                        raise ValueError(f"Wrong side to task: {self._task.__dict__}: {self.__side}")
+            except Exception as e:
+                logger.exception(f"Error while handle kline from okx ws: {e}")
 
     async def _subscribe_klines(self) -> None:
         """

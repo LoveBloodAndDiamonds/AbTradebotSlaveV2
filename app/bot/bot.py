@@ -25,11 +25,11 @@ async def start_bot() -> None:
     # Создаем диспатчер
     dp = Dispatcher(storage=MemoryStorage())
 
-    # Необязательная кастомизация имени бота  # todo
-    # try:
-    #     await bot.set_my_name(f"Abcde Robot v{VERSION}")
-    # except Exception as e:  # noqa
-    #     logger.error(f"Can't rename bot: {e}")
+    # Необязательная кастомизация имени бота
+    try:
+        await bot.set_my_name(f"Abcde Robot v{VERSION}")
+    except Exception as e:  # noqa
+        logger.error(f"Can't rename bot: {e}")
 
     # Регистрируем команды
     register_commands(dp)
