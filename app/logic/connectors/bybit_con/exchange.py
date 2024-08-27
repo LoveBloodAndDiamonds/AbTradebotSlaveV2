@@ -1,5 +1,4 @@
-from app import config
-from app.config import logger, log_errors
+from app.config import logger, log_errors, BREAKEVEN_STEP_PERCENT
 from .breakeven import BybitBreakevenWebSocket
 from .client import AsyncClient
 from .exchange_info import exchange_info
@@ -100,9 +99,9 @@ class Bybit(ABCExchange):
 
         # Считаем цену безубытка
         if one_way_position_info["side"] == "Sell":
-            be_price: float = float(one_way_position_info["avgPrice"]) * (1 - config.BREAKEVEN_STEP_PERCENT / 100)
+            be_price: float = float(one_way_position_info["avgPrice"]) * (1 - BREAKEVEN_STEP_PERCENT / 100)
         elif one_way_position_info["side"] == "Buy":
-            be_price: float = float(one_way_position_info["avgPrice"]) * (1 + config.BREAKEVEN_STEP_PERCENT / 100)
+            be_price: float = float(one_way_position_info["avgPrice"]) * (1 + BREAKEVEN_STEP_PERCENT / 100)
 
         # Создаем kwargs для ордера
         if be_type == BreakevenType.MINUS:

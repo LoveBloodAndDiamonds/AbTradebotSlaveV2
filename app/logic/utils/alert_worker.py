@@ -34,7 +34,8 @@ class AlertWorker:
         try:
             await cls.__BOT.send_message(
                 chat_id=cls.__ADMIN_ID,
-                text=message
+                text=message,
+                parse_mode=None
             )
             logger.debug(f"Alert '{message}' was sent")
         except Exception as e:

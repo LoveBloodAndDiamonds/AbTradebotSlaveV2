@@ -204,8 +204,8 @@ async def main() -> None:
 
     match system:
         case "Darwin" | "Windows":
-            await _from_json_case(db, secrets)  # todo comment this
-            # await _cli_case(db, secrets)  # todo uncomment this
+            # await _from_json_case(db, secrets)
+            await _cli_case(db, secrets)
         case _:
             await _from_json_case(db, secrets)
 

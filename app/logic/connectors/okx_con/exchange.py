@@ -1,4 +1,4 @@
-from app.config import logger
+from app.config import logger, BREAKEVEN_STEP_PERCENT
 from .breakeven import OKXBreakevenWebSocket
 from .client import AsyncClient
 from .exchange_info import exchange_info
@@ -55,10 +55,6 @@ class OKX(ABCExchange):
             # Открываем маркет ордер
             await self._create_market_order()
 
-            # Открывем тейк-профит
-
-            # Открываем стоп-лосс
-
         except Exception as e:
             logger.exception(f"Error while process signal: {e}")
             await AlertWorker.send(f"Ошибка при обработке сигнала: {e}")
@@ -78,11 +74,67 @@ class OKX(ABCExchange):
 
             return True
 
-    async def _handle_breakeven_event(self, be_type: BreakevenType):
+    async def _handle_breakeven_event(self, be_type: BreakevenType) -> None:
         """ Функция принимает каллбек для события, когда нужно переставить безубыток. """
-        await AlertWorker.warning(f"Пытаюсь переставить безубыток на стратегии {self._signal.strategy}. "
-                                  f"Дождитесь сообщения об успешном создании ордера.")
-        # todo
+        try:
+            await AlertWorker.warning(f"Пытаюсь переставить безубыток на стратегии {self._signal.strategy}. "
+                                      f"Дождитесь сообщения об успешном создании ордера.")
+
+            # Получаем информацию о текущей позиции
+            position: dict = await self.okx.get_open_positions(instId=self.symbol)
+            position: dict = position["data"][0]
+
+            from pprint import pp
+            pp(position)
+
+            # Проверяем, возможно позиция уже закрыта
+            if not position["pos"]:
+                logger.info(f"Position on {self.symbol} already closed.")
+                return
+
+            side = "sell" if float(position["pos"]) < 0 else "buy" if float(position["pos"]) > 0 else \
+                f"pos={position['pos']}"
+
+            if side == "sell":
+                be_price: float = float(position["avgPx"]) * (1 - BREAKEVEN_STEP_PERCENT / 100)
+            elif side == "buy":
+                be_price: float = float(position["avgPx"]) * (1 + BREAKEVEN_STEP_PERCENT / 100)
+            else:
+                raise ValueError("Wrong position side.")
+            be_price: float = exchange_info.round_price(self.symbol, be_price)
+
+            body: dict = dict(
+                instId=self.symbol,
+                tdMode="cross",
+                side="sell" if side == "buy" else "buy",
+                reduceOnly=True,
+                ordType="conditional",  # or 'oco' idk
+                closeFraction="1",  # maybe it will not work becouse it was already placed 1 sl/tp order,
+            )
+
+            if be_type == BreakevenType.PLUS:
+                # move stop
+                body["slOrdKind"] = "condition"
+                body["slTriggerPx"] = be_price
+                body["slOrdPx"] = -1
+            elif be_type == BreakevenType.MINUS:
+                # move tp
+                body["tpOrdKind"] = "condition"
+                body["tpTriggerPx"] = be_price
+                body["tpOrdPx"] = -1
+
+            responce: dict = await self.okx.place_algo_order(body=body)
+
+            if responce.get("code") != "0":
+                logger.exception(f"Error while opening order on okx.com: {responce}")
+                await AlertWorker.error(f"Произошла ошибка при переставлении безубытка на okx.com: {responce}")
+                raise Exception()
+            else:
+                await AlertWorker.success(f"Переставлен ордер в безубыток по {self.symbol} на цену {be_price}")
+
+        except Exception as e:
+            logger.exception(e)
+            await AlertWorker.error(f"Произошла ошибка при переставлении безубытка на okx.com: {e}")
 
     async def _is_available_to_open_position(self) -> bool:
         """
@@ -90,7 +142,7 @@ class OKX(ABCExchange):
         :return:
         """
         positions: dict = await self.okx.get_open_positions(instId=self.symbol)
-        if positions["data"][0]["margin"]:
+        if positions["data"][0]["pos"]:
             logger.info(f"Position on {self.symbol} already opened.")
             return False
         return True
@@ -156,4 +208,12 @@ class OKX(ABCExchange):
             ]
         )
 
-        return await self.okx.place_order(body)
+        responce: dict = await self.okx.place_order(body)
+
+        if responce.get("code") != "0":
+            raise Exception(f"Error while opening order on okx.com: {responce}")
+        else:
+            await AlertWorker.success(f"Открыт ордер по {self.symbol} на okx.com размером "
+                                      f"{body['sz']} в сторону {body['side']}")
+        return responce
+

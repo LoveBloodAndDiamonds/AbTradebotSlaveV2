@@ -187,3 +187,6 @@ class AsyncClient(BaseClient):
 
     async def close_position(self, body: dict) -> Optional[Dict[str, Any]]:
         return await self._post("/api/v5/trade/close-position", body=body)
+
+    async def place_algo_order(self, body: dict) -> Optional[Dict[str, Any]]:
+        return await self._post("/api/v5/trade/order-algo", body=body)

@@ -41,31 +41,28 @@ class Logic:
         Запуск логики соединения с мастер-вебсокетом.
         :return:
         """
-        # todo remove# todo remove# todo remove# todo remove# todo remove
-        from app.logic.connectors.okx_con.breakeven import BreakevenTask, OKXBreakevenWebSocket
-        await OKXBreakevenWebSocket(BreakevenTask(
-            ticker="MATIC-USDT-SWAP",
-            take_profit=0.52,
-            stop_loss=0.48,
-            plus_breakeven=0.51,
-            minus_breakeven=0.49,
-            callback=None,
-            meta="test",
-        )).run()
-        while True:
-            await asyncio.sleep(10000)
-        # todo remove# todo remove# todo remove# todo remove# todo remove
+        # from app.logic.connectors.okx_con.breakeven import BreakevenTask, OKXBreakevenWebSocket
+        # await OKXBreakevenWebSocket(BreakevenTask(
+        #     ticker="MATIC-USDT-SWAP",
+        #     take_profit=0.52,
+        #     stop_loss=0.48,
+        #     plus_breakeven=0.51,
+        #     minus_breakeven=0.49,
+        #     callback=None,
+        #     meta="test",
+        # )).run()
+        # while True:
+        #     await asyncio.sleep(10000)
 
-        # todo remove# todo remove# todo remove# todo remove# todo remove# todo remove# todo remove
         # await asyncio.sleep(4)
         # signal = Signal(
         #     strategy="zxcghoul",
         #     ticker="MATICUSDT",
         #     exchange=Exchange.OKX,
         #     take_profit=0.51,
-        #     stop_loss=0.49,
-        #     plus_breakeven=0.1152,
-        #     minus_breakeven=0.1148,
+        #     stop_loss=0.48,
+        #     plus_breakeven=0.5,
+        #     minus_breakeven=0.49,
         # )
         #
         # user_strategy = UserStrategySettings(
@@ -80,13 +77,17 @@ class Logic:
         #     api_pass=passkey,
         #     signal=signal,
         #     user_strategy=user_strategy)
+
+        # from app.logic.schemas import BreakevenType
+        # await exchange._init_client()
+        # await exchange._handle_breakeven_event(BreakevenType.PLUS)
+
         # is_success: bool = await exchange.process_signal()
         #
         # logger.success(is_success)
         #
         # while True:
         #     await asyncio.sleep(10000)
-        # todo remove# todo remove# todo remove# todo remove# todo remove# todo remove# todo remove
 
         # Создаем задачи для рабочих
         workers = [asyncio.create_task(self._worker()) for _ in range(WS_WORKERS_COUNT)]
