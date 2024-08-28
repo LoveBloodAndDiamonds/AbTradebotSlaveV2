@@ -86,7 +86,6 @@ class OKXWarden(ABCPositionWarden):
 
         for order in orders:
             order_type: str | None = "sl" if order["slTriggerPx"] else "tp" if order["tpTriggerPxType"] else None
-            print(order_type, order)
             if not order_type:
                 continue
             if order["instId"] not in symbol_orders_types:
