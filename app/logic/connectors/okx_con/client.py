@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import hmac
 import json
@@ -6,6 +7,8 @@ from typing import Optional, Union, Dict, Any, Literal
 from urllib.parse import urlencode
 
 import aiohttp
+
+from app.config import logger
 
 
 class BaseClient:
@@ -18,7 +21,7 @@ class BaseClient:
     """
     entrypoint_url: str = "https://www.okx.com"
 
-    def __init__(self, api_key: str, secret_key: str, passphrase: str) -> None:
+    def __init__(self, api_key: str, secret_key: str, passphrase: str, retries: Optional[int] = 3) -> None:
         """
         Initialize the class.
 
@@ -26,6 +29,7 @@ class BaseClient:
         self.__api_key = api_key
         self.__secret_key = secret_key
         self.__passphrase = passphrase
+        self.__retries = retries
 
     @staticmethod
     async def get_timestamp() -> str:
@@ -94,30 +98,35 @@ class BaseClient:
             'OK-ACCESS-PASSPHRASE': self.__passphrase
         }
 
-        if method == "POST":
-            async with aiohttp.ClientSession() as session:
-                response = await session.post(
-                    url=url,
-                    headers=header,
-                    data=json.dumps(body) if isinstance(body, dict) else body
-                )
-            response = await response.json()
+        for _ in range(self.__retries):
+            try:
+                if method == "POST":
+                    async with aiohttp.ClientSession(timeout=3) as session:
+                        response = await session.post(
+                            url=url,
+                            headers=header,
+                            data=json.dumps(body) if isinstance(body, dict) else body
+                        )
+                    response = await response.json()
 
-        else:
-            async with aiohttp.ClientSession() as session:
-                response = await session.get(url=url, headers=header)
-            response = await response.json()
+                else:
+                    async with aiohttp.ClientSession(timeout=3) as session:
+                        response = await session.get(url=url, headers=header)
+                    response = await response.json()
 
-        if int(response.get('code')):
-            raise ConnectionError(f"{response}")
+                if int(response.get('code')):
+                    raise ConnectionError(f"{response}")
 
-        return response
+                return response
+            except asyncio.TimeoutError:
+                logger.error("OKX.com TimeoutError")
+                continue
 
 
 class AsyncClient(BaseClient):
 
-    def __init__(self, api_key: str, secret_key: str, passphrase: str) -> None:
-        super().__init__(api_key, secret_key, passphrase)
+    def __init__(self, api_key: str, secret_key: str, passphrase: str, retries: Optional[int] = 3) -> None:
+        super().__init__(api_key, secret_key, passphrase, retries)
 
     async def _post(self, request_path: str, body: Optional[dict] | str = None) -> Optional[Dict[str, Any]]:
         return await self.make_request("POST", request_path, body)

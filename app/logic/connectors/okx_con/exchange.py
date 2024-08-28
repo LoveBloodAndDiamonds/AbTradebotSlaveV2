@@ -144,10 +144,13 @@ class OKX(ABCExchange):
         positions: dict = await self.okx.get_open_positions(instId=self.symbol)
         # logger.debug("--posmark--")
         # logger.debug(positions)
-        if positions["data"][0]["avgPx"]:
-            logger.info(f"Position on {self.symbol} already opened.")
-            return False
-        return True
+        try:
+            if positions["data"][0]["avgPx"]:
+                logger.info(f"Position on {self.symbol} already opened.")
+                return False
+            return True
+        except IndexError:
+            raise Exception(f"okx.com return invalid data for {self.symbol}: {positions}")
 
     def _define_position_side(self) -> None:
         """
