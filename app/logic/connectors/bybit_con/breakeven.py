@@ -41,9 +41,12 @@ class BybitBreakevenWebSocket(ABCBreakevenWebSocket):
 
     async def run(self) -> None:
         """ Функция запускает все процессы, которые нужны для отслеживания безубытка. """
-        logger.info(f"Breakeven task started {self._task}")
-        loop = asyncio.get_running_loop()
-        loop.create_task(self._start_logic())  # noqa
+        if self.__in_progress:
+            logger.info(f"Breakeven task started {self._task}")
+            loop = asyncio.get_running_loop()
+            loop.create_task(self._start_logic())  # noqa
+        else:
+            logger.info("Breakeven task no need to be launched")
 
     async def _start_logic(self) -> None:
         # Логируем запуск

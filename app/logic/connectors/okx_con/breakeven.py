@@ -16,7 +16,7 @@ class OKXBreakevenWebSocket(ABCBreakevenWebSocket):
     """
     Класс существует для определения момента, когда нужно переставить безубыток.
     """
-    __KLINES_WS_URL: str = "wss://ws.okx.com:8443/ws/v5/public"
+    # __KLINES_WS_URL: str = "wss://ws.okx.com:8443/ws/v5/public"
     __KLINES_WS_URL: str = "wss://ws.okx.com:8443/ws/v5/business"
     __PING_INTERVAL_SECONDS: int = 10
 
@@ -41,9 +41,12 @@ class OKXBreakevenWebSocket(ABCBreakevenWebSocket):
 
     async def run(self) -> None:
         """ Функция запускает все процессы, которые нужны для отслеживания безубытка. """
-        logger.info(f"Breakeven task started {self._task}")
-        loop = asyncio.get_running_loop()
-        loop.create_task(self._start_logic())  # noqa
+        if self.__in_progress:
+            logger.info(f"Breakeven task started {self._task}")
+            loop = asyncio.get_running_loop()
+            loop.create_task(self._start_logic())  # noqa
+        else:
+            logger.info("Breakeven task no need to be launched")
 
     async def _start_logic(self) -> None:
         # Логируем запуск
@@ -123,7 +126,7 @@ class OKXBreakevenWebSocket(ABCBreakevenWebSocket):
                     async def _at_find_breakeven(be_type: BreakevenType):
                         logger.info(f"Detected {be_type} on kline: {kline}")
                         self._stop()
-                        await self._task.callback(be_type)
+                        await self.task().callback(be_type)
 
                     if self.__side == Side.BUY:
                         if v >= self._task.plus_breakeven:

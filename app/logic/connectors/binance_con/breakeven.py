@@ -29,9 +29,12 @@ class BinanceBreakevenWebSocket(ABCBreakevenWebSocket):
         self.__in_progress: bool = True
 
     async def run(self) -> None:
-        logger.info(f"Breakeven task started {self._task}")
-        loop = asyncio.get_running_loop()
-        loop.create_task(self._start_logic())  # noqa
+        if self.__in_progress:
+            logger.info(f"Breakeven task started {self._task}")
+            loop = asyncio.get_running_loop()
+            loop.create_task(self._start_logic())  # noqa
+        else:
+            logger.info("Breakeven task no need to be launched")
 
     def _stop(self) -> None:
         logger.debug(f"Break binance.com klines ws for {self._task.ticker}")

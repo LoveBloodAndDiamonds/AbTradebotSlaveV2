@@ -84,8 +84,8 @@ class OKX(ABCExchange):
             position: dict = await self.okx.get_open_positions(instId=self.symbol)
             position: dict = position["data"][0]
 
-            from pprint import pp
-            pp(position)
+            # from pprint import pp
+            # pp(position)
 
             # Проверяем, возможно позиция уже закрыта
             if not position["pos"]:
