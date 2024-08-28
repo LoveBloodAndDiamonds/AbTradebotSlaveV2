@@ -142,8 +142,8 @@ class OKX(ABCExchange):
         :return:
         """
         positions: dict = await self.okx.get_open_positions(instId=self.symbol)
-        logger.debug("--posmark--")
-        logger.debug(positions)
+        # logger.debug("--posmark--")
+        # logger.debug(positions)
         if positions["data"][0]["avgPx"]:
             logger.info(f"Position on {self.symbol} already opened.")
             return False
