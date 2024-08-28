@@ -21,11 +21,11 @@ class BybitBreakevenWebSocket(ABCBreakevenWebSocket):
     __PING_INTERVAL_SECONDS: int = 10
 
     def __init__(self, task: BreakevenTask, workers: int = 1) -> None:
+        super().__init__(task=task)
+
         if not any([task.plus_breakeven, task.minus_breakeven]):
             logger.info(f"Breakeven prices on {task.ticker} bybit was not defined!")
             return
-
-        super().__init__(task=task)
 
         self.__workers: int = workers
         self.__queue: asyncio.Queue = asyncio.Queue()
