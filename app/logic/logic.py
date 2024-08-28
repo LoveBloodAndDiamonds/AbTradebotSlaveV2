@@ -245,7 +245,7 @@ class Logic:
                 is_success: bool = await exchange_obj.process_signal()
 
                 # Проверяем количество оставшихся сигналов, если сигнал успешно обработан
-                if not is_success or self._active_strategies[signal.strategy] is None:
+                if not is_success or self._active_strategies[signal.strategy].trades_count is None:
                     continue
 
                 # Убалвяем количество оставшихся сделок и информируем юзера
