@@ -138,8 +138,6 @@ class ABCBreakevenWebSocket(ABC):
     Класс существует для определения момента, когда нужно переставить безубыток.
     """
     def __init__(self, task: BreakevenTask):
-        self.__in_progress: bool = False
-
         self._task: BreakevenTask = task
 
     def task(self) -> BreakevenTask:

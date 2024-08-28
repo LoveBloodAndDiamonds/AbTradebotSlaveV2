@@ -21,11 +21,14 @@ class OKXBreakevenWebSocket(ABCBreakevenWebSocket):
     __PING_INTERVAL_SECONDS: int = 10
 
     def __init__(self, task: BreakevenTask, workers: int = 1) -> None:
-        super().__init__(task=task)
-
         if not any([task.plus_breakeven, task.minus_breakeven]):
             logger.info(f"Breakeven prices on {task.ticker} okx was not defined!")
+            self.inited: bool = False
             return
+        else:
+            self.inited: bool = True
+
+        super().__init__(task=task)
 
         self.__workers: int = workers
         self.__queue: asyncio.Queue = asyncio.Queue()
@@ -41,7 +44,7 @@ class OKXBreakevenWebSocket(ABCBreakevenWebSocket):
 
     async def run(self) -> None:
         """ Функция запускает все процессы, которые нужны для отслеживания безубытка. """
-        if self.__in_progress:
+        if self.inited:
             logger.info(f"Breakeven task started {self._task}")
             loop = asyncio.get_running_loop()
             loop.create_task(self._start_logic())  # noqa

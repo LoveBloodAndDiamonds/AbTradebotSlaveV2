@@ -14,11 +14,14 @@ from ..abstract import ABCBreakevenWebSocket
 class BinanceBreakevenWebSocket(ABCBreakevenWebSocket):
 
     def __init__(self, task: BreakevenTask, workers: int = 1) -> None:
-        super().__init__(task=task)
-
         if not any([task.plus_breakeven, task.minus_breakeven]):
             logger.info(f"Breakeven prices on {task.ticker} binance was not defined!")
+            self.inited: bool = False
             return
+        else:
+            self.inited: bool = True
+
+        super().__init__(task=task)
 
         self.__workers: int = workers
         self.__queue: asyncio.Queue = asyncio.Queue()
@@ -29,7 +32,7 @@ class BinanceBreakevenWebSocket(ABCBreakevenWebSocket):
         self.__in_progress: bool = True
 
     async def run(self) -> None:
-        if self.__in_progress:
+        if self.inited:
             logger.info(f"Breakeven task started {self._task}")
             loop = asyncio.get_running_loop()
             loop.create_task(self._start_logic())  # noqa
