@@ -57,7 +57,7 @@ class OKX(ABCExchange):
 
         except Exception as e:
             logger.exception(f"Error while process signal: {e}")
-            await AlertWorker.send(f"Ошибка при обработке сигнала: {e}")
+            await AlertWorker.send(f"Ошибка при обработке сигнала по {self.symbol}: {e}")
             return False
 
         else:
@@ -150,7 +150,7 @@ class OKX(ABCExchange):
                 return False
             return True
         except IndexError:
-            raise Exception(f"okx.com return invalid data for {self.symbol}: {positions}")
+            raise Exception(f"okx.com return invalid data: {positions}")
 
     def _define_position_side(self) -> None:
         """
