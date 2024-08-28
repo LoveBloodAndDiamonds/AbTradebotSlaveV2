@@ -111,6 +111,8 @@ async def keys_command_handler(message: types.Message, command: CommandObject, d
             secrets.okx_api_secret = command.args.strip()
         case "pass_okx":
             secrets.okx_api_pass = command.args.strip()
+        case _:
+            return await message.answer("Wrong command.")
 
     try:
         if command.command in ["key_binance", "secret_binance"]:
@@ -118,14 +120,12 @@ async def keys_command_handler(message: types.Message, command: CommandObject, d
                 await _validate_binance_keys(
                     api_key=secrets.binance_api_key,
                     api_secret=secrets.binance_api_secret)
-                await db.secrets_repo.update(secrets)
                 return await message.answer("✅ Ключи прошли проверку.")
         if command.command in ["key_bybit", "secret_bybit"]:
             if all([secrets.bybit_api_key, secrets.bybit_api_secret]):
                 await _validate_bybit_keys(
                     api_key=secrets.bybit_api_key,
                     api_secret=secrets.bybit_api_secret)
-                await db.secrets_repo.update(secrets)
                 return await message.answer("✅ Ключи прошли проверку.")
         if command.command in ["key_okx", "secret_okx", "pass_okx"]:
             if all([secrets.okx_api_key, secrets.okx_api_secret, secrets.okx_api_pass]):
@@ -133,8 +133,8 @@ async def keys_command_handler(message: types.Message, command: CommandObject, d
                     api_key=secrets.okx_api_key,
                     api_secret=secrets.okx_api_secret,
                     api_pass=secrets.okx_api_pass)
-                await db.secrets_repo.update(secrets)
                 return await message.answer("✅ Ключи прошли проверку.")
+        await db.secrets_repo.update(secrets)
     except Exception as e:
         return await message.answer(f"🛑 Произошла ошибка при проверке API ключей: {e}", parse_mode=None)
 
