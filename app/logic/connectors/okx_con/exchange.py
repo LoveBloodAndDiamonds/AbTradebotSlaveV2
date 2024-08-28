@@ -142,7 +142,8 @@ class OKX(ABCExchange):
         :return:
         """
         positions: dict = await self.okx.get_open_positions(instId=self.symbol)
-        if positions["data"][0]["pos"]:
+        logger.warning(positions)  # todo
+        if positions["data"][0]["avgPx"]:
             logger.info(f"Position on {self.symbol} already opened.")
             return False
         return True
