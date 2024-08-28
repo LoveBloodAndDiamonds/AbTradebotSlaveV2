@@ -100,18 +100,18 @@ class BaseClient:
 
         for _ in range(self.__retries):
             try:
-                if method == "POST":
-                    async with aiohttp.ClientSession(timeout=3) as session:
+                timeout = aiohttp.ClientTimeout(total=5)
+
+                async with aiohttp.ClientSession(timeout=timeout) as session:
+                    if method == "POST":
                         response = await session.post(
                             url=url,
                             headers=header,
                             data=json.dumps(body) if isinstance(body, dict) else body
                         )
-                    response = await response.json()
-
-                else:
-                    async with aiohttp.ClientSession(timeout=3) as session:
+                    else:
                         response = await session.get(url=url, headers=header)
+
                     response = await response.json()
 
                 if int(response.get('code')):
