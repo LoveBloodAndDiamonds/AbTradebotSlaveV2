@@ -191,7 +191,7 @@ class Bybit(ABCExchange):
             category=self.category,
             symbol=self.symbol,
             side=self.side,
-            orderType="MARKET",
+            orderType="Market",
             takeProfit=str(exchange_info.round_price(self.symbol, self._signal.take_profit)),
             stopLoss=str(exchange_info.round_price(self.symbol, self._signal.stop_loss)),
             qty=str(exchange_info.round_quantity(self.symbol, self.quantity)))

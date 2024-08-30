@@ -14,6 +14,7 @@ from ...schemas import BreakevenType, BreakevenTask
 
 
 class Binance(ABCExchange):
+    rW: dict[str, int] = {"recvWindow": 1_000}  # the number of milliseconds the request is valid for
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
