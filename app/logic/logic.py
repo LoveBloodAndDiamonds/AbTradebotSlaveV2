@@ -59,17 +59,17 @@ class Logic:
         #     strategy="zxcghoul",
         #     ticker="MATICUSDT",
         #     exchange=Exchange.OKX,
-        #     take_profit=0.51,
-        #     stop_loss=0.48,
-        #     plus_breakeven=0.5,
-        #     minus_breakeven=0.49,
+        #     take_profit=0.41,
+        #     stop_loss=0.39,
+        #     plus_breakeven=0,
+        #     minus_breakeven=0,
         # )
         #
         # user_strategy = UserStrategySettings(
         #     risk_usdt=0.5,
         #     trades_count=1
         # )
-        # #
+        #
         # api_key, api_secret, passkey, exchange = await self._get_keys_and_exchange()
         # exchange = EXCHANGES_CLASSES_FROM_ENUM[exchange](
         #     api_key=api_key,
