@@ -1,5 +1,7 @@
 import asyncio
 
+import httpx
+
 from app.config import WARDEN_TIMEOUT, logger
 from app.database import SecretsORM, Database
 from app.logic.utils import AlertWorker
@@ -53,6 +55,8 @@ class BybitWarden(ABCPositionWarden):
                     # Заркываем позиции
                     await self._close_positions(positions_to_close=positions_to_close)
 
+                except httpx.ConnectTimeout as e:
+                    logger.error(f"Error in bybit warden: ConnectTimeout: {e}")
                 except Exception as e:
                     logger.exception(f"Error in bybit warden: {e}")
             else:
