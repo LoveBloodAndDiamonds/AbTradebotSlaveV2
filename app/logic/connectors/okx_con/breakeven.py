@@ -132,9 +132,9 @@ class OKXBreakevenWebSocket(ABCBreakevenWebSocket):
                         await self.task().callback(be_type)
 
                     if self.__side == Side.BUY:
-                        if v >= self._task.plus_breakeven:
+                        if self._task.plus_breakeven and v >= self._task.plus_breakeven:
                             return await _at_find_breakeven(BreakevenType.PLUS)
-                        elif v <= self._task.minus_breakeven:
+                        elif self._task.minus_breakeven and v <= self._task.minus_breakeven:
                             return await _at_find_breakeven(BreakevenType.MINUS)
                         elif not self._task.stop_loss <= v <= self._task.take_profit:
                             self._stop()
@@ -142,9 +142,9 @@ class OKXBreakevenWebSocket(ABCBreakevenWebSocket):
                                          f"Breakven not detected but already take or stop!")
 
                     elif self.__side == Side.SELL:
-                        if self._task.plus_breakeven >= v:
+                        if self._task.plus_breakeven and self._task.plus_breakeven >= v:
                             return await _at_find_breakeven(BreakevenType.PLUS)
-                        elif self._task.minus_breakeven <= v:
+                        elif self._task.minus_breakeven and self._task.minus_breakeven <= v:
                             return await _at_find_breakeven(BreakevenType.MINUS)
                         elif not self._task.stop_loss >= v >= self._task.take_profit:
                             self._stop()
