@@ -71,6 +71,9 @@ class Binance(ABCExchange):
             if not market_order:
                 return False
 
+            # Ждем пока ордер заполнится
+            await self._w8_till_order_filled(order_id=market_order["orderId"])
+
             _: dict | bool = await self._create_order(
                 self._create_order_kwargs(
                     type_=FUTURE_ORDER_TYPE_STOP_MARKET,
@@ -90,7 +93,7 @@ class Binance(ABCExchange):
 
         except Exception as e:
             logger.exception(f"Error while process signal: {e}")
-            await AlertWorker.send(f"Ошибка при обработке сигнала: {e}")
+            await AlertWorker.error(f"Ошибка при обработке сигнала: {e}")
             return False
         else:
             await BinanceBreakevenWebSocket(
@@ -108,6 +111,32 @@ class Binance(ABCExchange):
             return True
         finally:
             await self.binance.close_connection()
+
+    @log_errors
+    async def _w8_till_order_filled(self, order_id: int) -> None:
+        """
+        Функция ждет, пока ордер заполнится.
+        :param order_id:
+        :return:
+        """
+        for _ in range(50):
+            try:
+                try:
+                    order: dict = await self.binance.futures_get_order(symbol=self.symbol, orderId=order_id)
+                except Exception as e:
+                    logger.error(f"Can't get order status: {e}")
+                    continue
+
+                if order["status"] == "FILLED":
+                    logger.info(f"Order filled: {order}")
+                    await AlertWorker.info(f"Ордер по {self.symbol} заполнен.")
+                    return
+                elif order["status"] in ["CANCELED", "PENDING_CANCEL", "REJECTED", "EXPIRED"]:
+                    raise Exception(f"Order status is bad: {order['status']}")
+            finally:
+                await asyncio.sleep(0.2)
+        else:
+            raise Exception(f"Cant w8 more order filled...")
 
     @log_errors
     async def _handle_breakeven_event(self, be_type: BreakevenType) -> None:

@@ -57,10 +57,10 @@ class Logic:
         # await asyncio.sleep(4)
         # signal = Signal(
         #     strategy="zxcghoul",
-        #     ticker="MATICUSDT",
-        #     exchange=Exchange.OKX,
-        #     take_profit=0.41,
-        #     stop_loss=0.39,
+        #     ticker="XRPUSDT",
+        #     exchange=Exchange.BINANCE,
+        #     take_profit=0.61,
+        #     stop_loss=0.59,
         #     plus_breakeven=0,
         #     minus_breakeven=0,
         # )
