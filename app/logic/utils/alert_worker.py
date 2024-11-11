@@ -1,3 +1,5 @@
+from typing import Optional, Literal
+
 from aiogram import Bot
 from aiogram.client.default import DefaultBotProperties
 
@@ -25,17 +27,18 @@ class AlertWorker:
         cls.__ADMIN_ID: int = secrets.admin_telegram_id
 
     @classmethod
-    async def send(cls, message: str) -> None:
+    async def send(cls, message: str, parse_mode: Optional[Literal["HTML"]] = None) -> None:
         """
         Функция отправляет сообщение пользователю.
         :param message: Текст, который нужно отправить.
+        :param parse_mode: Какой parse_mode использовать
         :return:
         """
         try:
             await cls.__BOT.send_message(
                 chat_id=cls.__ADMIN_ID,
                 text=message,
-                parse_mode=None
+                parse_mode=parse_mode
             )
             logger.debug(f"Alert '{message}' was sent")
         except Exception as e:

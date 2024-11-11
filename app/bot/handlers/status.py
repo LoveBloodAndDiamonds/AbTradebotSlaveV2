@@ -5,6 +5,7 @@ from app.logic import Logic, UserStrategySettings
 
 async def status_command_handler(message: types.Message, logic: Logic) -> types.Message:
     """/status command"""
+
     active_strategies: dict[str, UserStrategySettings] = logic.get_active_user_strategies()
 
     if active_strategies:

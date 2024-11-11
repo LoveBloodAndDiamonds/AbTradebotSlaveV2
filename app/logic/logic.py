@@ -328,6 +328,6 @@ Created by Signal robot v2 | Filipchuk’s method ({source["strategy"]})
 
 <i>🐧 Вернуться <a href='https://t.me/filipchuka/1023'>к содержанию тренинга.</a></i>
             """
-            await AlertWorker.warning(message=text)
+            await AlertWorker.send(message=text, parse_mode="HTML")
         except Exception as e:
             await AlertWorker.error(f"Error while sending alert: {e}")
