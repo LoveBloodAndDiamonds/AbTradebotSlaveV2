@@ -10,6 +10,7 @@ from .start import start_command_handler
 from .status import status_command_handler
 from .stop import stop_command_handler
 from .trade import trade_command_handler
+from .alerts import alerts_command_handler
 
 bot_commands = (
     ("help", "Инструкция и список команд"),
@@ -19,6 +20,7 @@ bot_commands = (
     ("stop", "Остановить стратегию(и)"),
     ("keys", "Настройка API ключей"),
     ("exchange", "Выбор биржи"),
+    ("alerts", "Включение уведомлений"),
 )
 
 
@@ -40,6 +42,7 @@ def register_commands(dp: Dispatcher) -> None:
     dp.message.register(trade_command_handler, Command("trade"))
     dp.message.register(stop_command_handler, Command("stop"))
     dp.message.register(status_command_handler, Command("status"))
+    dp.message.register(alerts_command_handler, Command("alerts"))
 
 
 async def set_up_commands(bot: Bot) -> None:

@@ -38,3 +38,6 @@ class SecretsORM(Base):
     okx_api_key: Mapped[str] = mapped_column(nullable=True)
     okx_api_secret: Mapped[str] = mapped_column(nullable=True)
     okx_api_pass: Mapped[str] = mapped_column(nullable=True)
+
+    # Состояние сигналов
+    alerts: Mapped[bool] = mapped_column(nullable=True)

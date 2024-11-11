@@ -8,7 +8,7 @@ import websockets
 from app.config import logger, log_args, VERSION, WS_RECONNECT_TIMEOUT, WS_WORKERS_COUNT
 from app.database import Database, SecretsORM, Exchange
 from .connectors import EXCHANGES_CLASSES_FROM_ENUM, BinanceWarden, BybitWarden, ABCExchange, OKXWarden
-from .schemas import UserStrategySettings, Signal
+from .schemas import UserStrategySettings, Signal, SignalDict
 from .utils import AlertWorker
 
 
@@ -225,9 +225,18 @@ class Logic:
         """
         while True:
             try:
+                # Обновляем данные из базы данных
+                await self._update_secrets()
+
                 # Обрабатываем и валидируем сигнал
                 msg: dict = await self._queue.get()
                 signal: Signal = Signal.from_dict(signal_dict=msg)
+
+                # Отсылаем алерт, если нужно
+                if self._secrets.alerts:
+                    await self._send_alert(source=msg)
+
+                # Проыеряем есть ли стратегия в активных стратегияъ
                 if signal.strategy not in self._active_strategies:
                     logger.debug(f"Ignore signal: {signal}")
                     continue
@@ -283,8 +292,6 @@ class Logic:
         Функция возвращает ключи в соответствии с биржей сигнала
         :return:
         """
-        await self._update_secrets()
-
         if self._secrets.exchange == Exchange.BINANCE:
             if self._secrets.binance_api_key and self._secrets.binance_api_secret:
                 return self._secrets.binance_api_key, self._secrets.binance_api_secret, None, self._secrets.exchange
@@ -304,15 +311,23 @@ class Logic:
         else:
             raise ValueError("Exchange was not defined by user.")
 
-# self._active_strategies["test"] = UserStrategySettings(
-#     trades_count=10,
-#     risk_usdt=0.5
-# )
-# await self._queue.put({
-#     "strategy": "test",
-#     "ticker": "TRXUSDT",
-#     "exchange": "BINANCE",
-#     "take_profit": 0.116,
-#     "stop_loss": 0.114,
-#     "breakeven": 0.116
-# })
+    async def _send_alert(self, source: SignalDict) -> None:
+        """ Function to send telegram alert. """
+        try:
+            text = f"""
+<b>🤖 Внимание! На {source["ticker"].upper()} 5m вероятен отскок.</b>
+
+1. Найдите силу по <a href='https://t.me/filipchuka/1023'>логике CDV.</a>
+2. Определите уровни по <a href='https://t.me/filipchuka/994'>сетке Фибоначчи.</a>
+3. Проанализируйте <a href='https://t.me/filipchuka/1049'>профиль объема на рост/падение.</a>
+Соблюдайте риск менеджмент.
+—
+
+Created by Signal robot v2 | Filipchuk’s method ({source["strategy"]})
+—
+
+<i>🐧 Вернуться <a href='https://t.me/filipchuka/1023'>к содержанию тренинга.</a></i>
+            """
+            await AlertWorker.warning(message=text)
+        except Exception as e:
+            await AlertWorker.error(f"Error while sending alert: {e}")

@@ -11,4 +11,5 @@ async def help_command_handler(message: types.Message) -> types.Message:
 /stop - Инструкция по остановке стратегий
 /keys - Инструкция по установке API ключей
 /exchange - Инструкция по выбору биржи
+/alerts - Инструкция по сигналам
     """)
