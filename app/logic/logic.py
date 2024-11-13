@@ -235,6 +235,8 @@ class Logic:
                 # Отсылаем алерт, если нужно
                 if self._secrets.alerts:
                     await self._send_alert(source=msg)
+                else:
+                    logger.info("Alerts is turned off.")
 
                 # Проыеряем есть ли стратегия в активных стратегияъ
                 if signal.strategy not in self._active_strategies:
@@ -309,7 +311,10 @@ class Logic:
             raise ValueError("No keys on okx excange!")
 
         else:
-            raise ValueError("Exchange was not defined by user.")
+            try:
+                raise ValueError(f"Exchange was not defined by user: {self._secrets.exchange} ({type(self._secrets.exchange)}).")
+            except:  # noqa
+                raise ValueError(f"Exchange was not defined by user.")
 
     async def _send_alert(self, source: SignalDict) -> None:
         """ Function to send telegram alert. """
