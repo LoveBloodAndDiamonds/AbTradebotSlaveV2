@@ -294,17 +294,17 @@ class Logic:
         Функция возвращает ключи в соответствии с биржей сигнала
         :return:
         """
-        if self._secrets.exchange == Exchange.BINANCE:
+        if self._secrets.exchange in [Exchange.BINANCE, Exchange.BINANCE.value]:
             if self._secrets.binance_api_key and self._secrets.binance_api_secret:
                 return self._secrets.binance_api_key, self._secrets.binance_api_secret, None, self._secrets.exchange
             raise ValueError("No keys on binance excange!")
 
-        elif self._secrets.exchange == Exchange.BYBIT:
+        elif self._secrets.exchange in [Exchange.BYBIT, Exchange.BYBIT.value]:
             if self._secrets.bybit_api_key and self._secrets.bybit_api_secret:
                 return self._secrets.bybit_api_key, self._secrets.bybit_api_secret, None, self._secrets.exchange
             raise ValueError("No keys on bybit excange!")
 
-        elif self._secrets.exchange == Exchange.OKX:
+        elif self._secrets.exchange in [Exchange.OKX, Exchange.OKX.value]:
             if self._secrets.okx_api_key and self._secrets.okx_api_secret:
                 return self._secrets.okx_api_key, self._secrets.okx_api_secret, self._secrets.okx_api_pass, \
                     self._secrets.exchange
