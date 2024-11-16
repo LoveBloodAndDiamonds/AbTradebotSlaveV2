@@ -294,6 +294,8 @@ class Logic:
         Функция возвращает ключи в соответствии с биржей сигнала
         :return:
         """
+        await self._update_secrets()
+
         if self._secrets.exchange in [Exchange.BINANCE, Exchange.BINANCE.value]:
             if self._secrets.binance_api_key and self._secrets.binance_api_secret:
                 return self._secrets.binance_api_key, self._secrets.binance_api_secret, None, self._secrets.exchange
@@ -312,8 +314,9 @@ class Logic:
 
         else:
             try:
-                raise ValueError(f"Exchange was not defined by user: {self._secrets.exchange} ({type(self._secrets.exchange)}).")
-            except:  # noqa
+                raise ValueError(f"Exchange was not defined by user: {self._secrets.exchange}.")
+            except Exception as e:
+                logger.error(e)
                 raise ValueError(f"Exchange was not defined by user.")
 
     async def _send_alert(self, source: SignalDict) -> None:
