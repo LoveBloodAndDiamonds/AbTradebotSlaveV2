@@ -249,14 +249,28 @@ class Binance(ABCExchange):
                 return r
 
             # Ждем пока ордер заполниться, чтобы вернуть цену входа и убедиться, что ордер был открыт
-            while r.get("status", "") != "FILLED":
-                r = await self.binance.futures_get_order(symbol=self.symbol, orderId=r["orderId"])
-                if r.get("status", "") not in ["FILLED", "NEW", "PARTIALLY_FILLED"]:
+            # Ждем пока ордер заполниться, чтобы вернуть цену входа и убедиться, что ордер был открыт
+            for _ in range(0, 100):
+                await asyncio.sleep(0.1)  # Небольшая задержка из-за: https://dev.binance.vision/t/help-with-order-confirmation-apierror-code-2013-order-does-not-exist/7359
+                status: str = r.get("status", "")
+                if status == "FILLED":
+                    logger.info(f"Order filled: {r}")
+                    return r
+                elif status not in ["FILLED", "NEW", "PARTIALLY_FILLED"]:
                     logger.error(f"Order {r} was canceled or anything else")
                     return False
-                await asyncio.sleep(0.2)
-            logger.info(f"Order filled: {r}")
-            return r
+                else:
+
+                    # Получение статуса ордера с учетом: https://dev.binance.vision/t/help-with-order-confirmation-apierror-code-2013-order-does-not-exist/7359
+                    for retry in range(1, 4):
+                        try:
+                            r = await self.binance.futures_get_order(symbol=r["symbol"], orderId=r["orderId"])
+                        except Exception as e:
+                            if retry >= 3:
+                                raise e
+                            else:
+                                logger.error(f"Error while getting order status: {e}")
+                                await asyncio.sleep(0.1)
         else:
             logger.error(f"Error while creating order: {r}")
             await AlertWorker.error(f"Ошибка при создании ордера: {r}")
